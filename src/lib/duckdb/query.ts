@@ -14,9 +14,13 @@ export interface TrialBalanceRow {
   account_name: string | null;
   account_type: string | null;
   normal_balance: string | null;
-  total_debit: number;
-  total_credit: number;
-  balance: number;
+  opening_debit: number;
+  opening_credit: number;
+  period_debit: number;
+  period_credit: number;
+  closing_debit: number;
+  closing_credit: number;
+  net_balance: number;
 }
 
 export interface IncomeStatementRow {
@@ -49,6 +53,26 @@ export interface MonthlyCashflowRow {
   cash_in: number;
   cash_out: number;
   net_flow: number;
+}
+
+export interface KdvSummaryRow {
+  kdv_rate: number;
+  invoice_count: number;
+  total_subtotal: number;
+  total_kdv: number;
+  total_grand: number;
+}
+
+export interface ContactLedgerRow {
+  company_id: string;
+  contact_id: string;
+  contact_name: string;
+  entry_id: string;
+  entry_date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  running_balance: number;
 }
 
 // ── Query functions ────────────────────────────────────────────────
@@ -86,6 +110,24 @@ export async function queryMonthlyCashflow(
 ): Promise<MonthlyCashflowRow[]> {
   const rows = await duckRun(db, "SELECT * FROM v_monthly_cashflow;");
   return rows as unknown as MonthlyCashflowRow[];
+}
+
+export async function queryKdvSummary(
+  db: duckdb.Database
+): Promise<KdvSummaryRow[]> {
+  const rows = await duckRun(db, "SELECT * FROM v_kdv_summary;");
+  return rows as unknown as KdvSummaryRow[];
+}
+
+export async function queryContactLedger(
+  db: duckdb.Database,
+  contactId?: string
+): Promise<ContactLedgerRow[]> {
+  const sql = contactId
+    ? `SELECT * FROM v_contact_ledger WHERE contact_id = '${contactId}';`
+    : "SELECT * FROM v_contact_ledger;";
+  const rows = await duckRun(db, sql);
+  return rows as unknown as ContactLedgerRow[];
 }
 
 /**
