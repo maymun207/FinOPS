@@ -28,12 +28,17 @@ export const contactImportRowSchema = z.object({
       })
     ),
 
-  /** VKN — optional, max 50 chars */
+  /** VKN — optional, must be exactly 10 digits (tüzel kişi) or 11 digits (TC kimlik) */
   taxId: z
     .string()
-    .max(50, "VKN çok uzun")
     .optional()
-    .transform((val) => val?.trim() || undefined),
+    .transform((val) => val?.trim() || undefined)
+    .pipe(
+      z
+        .string()
+        .regex(/^\d{10,11}$/, "VKN must be 10 digits")
+        .optional()
+    ),
 
   /** Email — optional, must be valid if provided */
   email: z

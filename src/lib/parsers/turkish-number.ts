@@ -16,30 +16,46 @@
  */
 import Decimal from "decimal.js";
 
+/**
+ * Typed parse error with { field, input, reason } properties.
+ *
+ * Enables row-level error reporting in the import quarantine UI:
+ *   - `field`  — which column caused the error (optional, set by schema)
+ *   - `input`  — the original raw cell value that failed
+ *   - `reason` — human-readable Turkish explanation
+ */
 export class ParseError extends Error {
-  constructor(message: string, public readonly rawValue: unknown) {
-    super(message);
+  public readonly field: string | undefined;
+  public readonly input: unknown;
+  public readonly reason: string;
+
+  constructor(reason: string, input: unknown, field?: string) {
+    super(`${field ? `[${field}] ` : ""}${reason}`);
     this.name = "ParseError";
+    this.reason = reason;
+    this.input = input;
+    this.field = field;
   }
 }
 
 /**
  * Parse a Turkish-locale number string into a Decimal value.
  *
- * @param raw - The raw value from an Excel cell
+ * @param raw   - The raw value from an Excel cell
+ * @param field - Optional column/field name for error context
  * @returns Decimal — precise numeric representation
  * @throws ParseError if the value is empty, null, undefined, or unparseable
  */
-export function parseTurkishNumber(raw: unknown): Decimal {
+export function parseTurkishNumber(raw: unknown, field?: string): Decimal {
   // ── Guard: null / undefined / empty ──────────────────────────
   if (raw == null) {
-    throw new ParseError("Değer boş olamaz", raw);
+    throw new ParseError("Değer boş olamaz", raw, field);
   }
 
   // If already a number, return directly
   if (typeof raw === "number") {
     if (!isFinite(raw)) {
-      throw new ParseError("Geçersiz sayı değeri (Infinity/NaN)", raw);
+      throw new ParseError("Geçersiz sayı değeri (Infinity/NaN)", raw, field);
     }
     return new Decimal(raw);
   }
@@ -47,13 +63,11 @@ export function parseTurkishNumber(raw: unknown): Decimal {
   let str = String(raw).trim();
 
   if (str === "") {
-    throw new ParseError("Değer boş olamaz", raw);
+    throw new ParseError("Değer boş olamaz", raw, field);
   }
 
   // ── Strip percent sign (KDV rates: '%20' or '20%') ──────────
-  let isPercent = false;
   if (str.startsWith("%") || str.endsWith("%")) {
-    isPercent = true;
     str = str.replace(/%/g, "").trim();
   }
 
@@ -71,7 +85,7 @@ export function parseTurkishNumber(raw: unknown): Decimal {
   }
 
   if (str === "") {
-    throw new ParseError("Geçersiz sayı formatı", raw);
+    throw new ParseError("Geçersiz sayı formatı", raw, field);
   }
 
   // ── Detect format and normalize ──────────────────────────────
@@ -93,20 +107,39 @@ export function parseTurkishNumber(raw: unknown): Decimal {
       normalized = str.replace(/,/g, "");
     }
   } else if (hasComma && !hasDot) {
-    // Only comma: could be decimal separator or thousand separator
-    // If comma is followed by exactly 3 digits at end → thousand separator
-    // Otherwise → decimal separator
+    // Only comma: could be decimal separator or thousand separator.
+    // If comma is followed by exactly 3 digits at end → thousand separator.
+    // Otherwise → decimal separator.
+    //
+    // ═══════════════════════════════════════════════════════════════
+    // AMBIGUITY NOTE — '1,234' (one comma, no dot)
+    //
+    // This value is inherently ambiguous:
+    //   - Could be Turkish 1.234 (one thousand two hundred thirty-four)
+    //   - Could be English 1,234 (one thousand two hundred thirty-four)
+    //   - Could be Turkish 1,234 (one point two three four — decimal)
+    //
+    // Disambiguation strategy:
+    //   - If the value has exactly 3 digits after the comma AND ≤ 3 digits
+    //     before → treat comma as THOUSAND separator (→ integer 1234).
+    //   - The calling Zod schema can override this by using the `field`
+    //     parameter: if the column is labelled 'KDV Oranı' (KDV Rate)
+    //     or 'Miktar' (Quantity), the comma should be treated as decimal.
+    //     For 'Tutar' (Amount) columns, it's always a thousand separator.
+    //   - Default behavior without context: thousand separator (most common
+    //     in Turkish financial docs where amounts dominate).
+    // ═══════════════════════════════════════════════════════════════
     const parts = str.split(",");
     if (parts.length === 2 && parts[1]!.length === 3 && /^\d{1,3}$/.test(parts[0]!)) {
-      // AMBIGUOUS: '1,234' — treat as integer 1234
+      // AMBIGUOUS: '1,234' — default to thousand separator → 1234
       normalized = str.replace(/,/g, "");
     } else {
       // Decimal: '1234,56' → '1234.56'
       normalized = str.replace(",", ".");
     }
   } else if (hasDot && !hasComma) {
-    // Only dot: could be decimal or thousand separator
-    // If dot is followed by exactly 3 digits → thousand separator
+    // Only dot: could be decimal or thousand separator.
+    // If dot is followed by exactly 3 digits → thousand separator.
     const parts = str.split(".");
     if (parts.length === 2 && parts[1]!.length === 3 && /^\d{1,3}$/.test(parts[0]!)) {
       // Turkish thousand sep: '1.234' → 1234
@@ -128,7 +161,7 @@ export function parseTurkishNumber(raw: unknown): Decimal {
 
   // ── Validate: only digits and at most one dot ────────────────
   if (!/^\d+(\.\d+)?$/.test(normalized)) {
-    throw new ParseError(`Geçersiz sayı formatı: "${raw}"`, raw);
+    throw new ParseError(`Geçersiz sayı formatı: "${String(raw)}"`, raw, field);
   }
 
   let result = new Decimal(normalized);
@@ -137,11 +170,8 @@ export function parseTurkishNumber(raw: unknown): Decimal {
     result = result.neg();
   }
 
-  // Percent values are divided by 100 only if the caller wants rate form.
-  // For KDV display ('%20' → 20.00), we return the raw number.
-  // The caller can divide by 100 if needed for rate.
-  // Per spec: '%20' → 20.00
-  // So we return the number as-is (20.00, not 0.20)
+  // Percent values are returned as-is (e.g. '%20' → 20.00, not 0.20).
+  // The caller can divide by 100 if they need the rate form.
 
   return result;
 }
@@ -149,9 +179,9 @@ export function parseTurkishNumber(raw: unknown): Decimal {
 /**
  * Try to parse — returns Decimal or null (no throw).
  */
-export function tryParseTurkishNumber(raw: unknown): Decimal | null {
+export function tryParseTurkishNumber(raw: unknown, field?: string): Decimal | null {
   try {
-    return parseTurkishNumber(raw);
+    return parseTurkishNumber(raw, field);
   } catch {
     return null;
   }

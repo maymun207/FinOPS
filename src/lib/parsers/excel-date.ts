@@ -16,21 +16,32 @@ import { ParseError } from "./turkish-number";
 
 // ── Excel serial date epoch ────────────────────────────────────────
 // Excel uses 1900-01-01 as day 1, but includes a Lotus 123 bug
-// that treats 1900 as a leap year (it's not). So Feb 29, 1900 is
-// counted as day 60. We subtract 2 from the serial to compensate:
-// day 1 = Jan 1 1900, but Date epoch starts at Jan 1 1970.
+// that treats 1900 as a leap year (it's not). Serial 60 represents
+// the non-existent Feb 29, 1900. For serials > 59 we subtract 1
+// to correct for this phantom day.
+//
+// Epoch = Dec 31, 1899 so that: epoch + 1 day = Jan 1, 1900 = serial 1.
 const EXCEL_EPOCH = new Date(Date.UTC(1899, 11, 31)); // Dec 31, 1899
 
 /**
  * Convert an Excel serial number to an ISO date string.
  *
- * The Lotus 123 bug is handled: Excel serial 1 = 1900-01-01,
- * serial 60 = Feb 29, 1900 (doesn't exist), serial 61 = Mar 1, 1900.
+ * Lotus 123 bug handling:
+ *   serial 1  = 1900-01-01
+ *   serial 59 = 1900-02-28
+ *   serial 60 = 1900-02-29 (DOES NOT EXIST — Lotus bug; we map to Feb 28)
+ *   serial 61 = 1900-03-01
+ *
+ * For serials >= 60, we subtract 1 to skip the phantom day.
  */
-function excelSerialToISO(serial: number): string {
+function excelSerialToISO(serial: number, field?: string): string {
   if (serial < 1 || serial > 2958465) {
     // 2958465 = Dec 31, 9999
-    throw new ParseError(`Excel seri numarası aralık dışında: ${serial}`, serial);
+    throw new ParseError(
+      `Excel seri numarası aralık dışında: ${serial}`,
+      serial,
+      field
+    );
   }
 
   // Adjust for the Lotus bug: serials > 59 are off by 1
@@ -79,25 +90,26 @@ function toISO(year: number, month: number, day: number): string {
 /**
  * Parse an Excel date value (serial number or string) into ISO date format.
  *
- * @param raw - Excel cell value (number or string)
+ * @param raw   - Excel cell value (number or string)
+ * @param field - Optional column/field name for error context
  * @returns ISO date string 'YYYY-MM-DD'
  * @throws ParseError if the value is empty, ambiguous, or unparseable
  */
-export function parseExcelDate(raw: unknown): string {
+export function parseExcelDate(raw: unknown, field?: string): string {
   // ── Guard: null / undefined / empty ──────────────────────────
   if (raw == null) {
-    throw new ParseError("Tarih değeri boş olamaz", raw);
+    throw new ParseError("Tarih değeri boş olamaz", raw, field);
   }
 
   // ── Numeric: Excel serial date ───────────────────────────────
   if (typeof raw === "number") {
-    return excelSerialToISO(raw);
+    return excelSerialToISO(raw, field);
   }
 
   const str = String(raw).trim();
 
   if (str === "") {
-    throw new ParseError("Tarih değeri boş olamaz", raw);
+    throw new ParseError("Tarih değeri boş olamaz", raw, field);
   }
 
   // ── Try ISO format first (YYYY-MM-DD) ────────────────────────
@@ -108,7 +120,7 @@ export function parseExcelDate(raw: unknown): string {
     const day = parseInt(isoMatch[3]!, 10);
 
     if (!isValidDate(year, month, day)) {
-      throw new ParseError(`Geçersiz tarih: "${str}"`, raw);
+      throw new ParseError(`Geçersiz tarih: "${str}"`, raw, field);
     }
     return toISO(year, month, day);
   }
@@ -121,7 +133,7 @@ export function parseExcelDate(raw: unknown): string {
     const year = parseInt(dmyMatch[3]!, 10);
 
     if (!isValidDate(year, month, day)) {
-      throw new ParseError(`Geçersiz tarih: "${str}"`, raw);
+      throw new ParseError(`Geçersiz tarih: "${str}"`, raw, field);
     }
     return toISO(year, month, day);
   }
@@ -129,22 +141,23 @@ export function parseExcelDate(raw: unknown): string {
   // ── If it looks like a pure integer string, try as serial ────
   if (/^\d+$/.test(str)) {
     const serial = parseInt(str, 10);
-    return excelSerialToISO(serial);
+    return excelSerialToISO(serial, field);
   }
 
   // ── Reject ambiguous formats ─────────────────────────────────
   throw new ParseError(
     `Belirsiz tarih formatı: "${str}". Desteklenen formatlar: DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD`,
-    raw
+    raw,
+    field
   );
 }
 
 /**
  * Try to parse — returns ISO string or null (no throw).
  */
-export function tryParseExcelDate(raw: unknown): string | null {
+export function tryParseExcelDate(raw: unknown, field?: string): string | null {
   try {
-    return parseExcelDate(raw);
+    return parseExcelDate(raw, field);
   } catch {
     return null;
   }

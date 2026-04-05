@@ -161,21 +161,56 @@ describe("parseTurkishNumber", () => {
   });
 
   // ── Error cases ─────────────────────────────────────────────────
-  describe("Error cases → ParseError", () => {
-    it("'' → throws ParseError", () => {
-      expect(() => parseTurkishNumber("")).toThrow(ParseError);
+  describe("Error cases → ParseError with typed properties", () => {
+    it("'' → throws ParseError with input containing the raw value", () => {
+      try {
+        parseTurkishNumber("");
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(ParseError);
+        const pe = e as ParseError;
+        expect(pe.input).toBe("");
+        expect(pe.reason).toContain("boş");
+      }
     });
 
-    it("null → throws ParseError", () => {
-      expect(() => parseTurkishNumber(null)).toThrow(ParseError);
+    it("null → throws ParseError with input = null", () => {
+      try {
+        parseTurkishNumber(null);
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(ParseError);
+        const pe = e as ParseError;
+        expect(pe.input).toBeNull();
+        expect(pe.reason).toBeDefined();
+      }
     });
 
-    it("undefined → throws ParseError", () => {
-      expect(() => parseTurkishNumber(undefined)).toThrow(ParseError);
+    it("undefined → throws ParseError with input = undefined", () => {
+      try {
+        parseTurkishNumber(undefined);
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(ParseError);
+        const pe = e as ParseError;
+        expect(pe.input).toBeUndefined();
+      }
     });
 
     it("'abc' → throws ParseError", () => {
       expect(() => parseTurkishNumber("abc")).toThrow(ParseError);
+    });
+
+    it("non-numeric string 'fabc' throws ParseError", () => {
+      try {
+        parseTurkishNumber("fabc");
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(ParseError);
+        const pe = e as ParseError;
+        expect(pe.input).toBe("fabc");
+        expect(pe.reason).toContain("fabc");
+      }
     });
 
     it("Infinity → throws ParseError", () => {
@@ -184,6 +219,21 @@ describe("parseTurkishNumber", () => {
 
     it("NaN → throws ParseError", () => {
       expect(() => parseTurkishNumber(NaN)).toThrow(ParseError);
+    });
+
+    it("field parameter propagates to ParseError.field", () => {
+      try {
+        parseTurkishNumber("", "subtotal");
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        expect(e).toBeInstanceOf(ParseError);
+        const pe = e as ParseError;
+        expect(pe.field).toBe("subtotal");
+        expect(pe.input).toBe("");
+        expect(pe.reason).toBeDefined();
+        // message includes field name
+        expect(pe.message).toContain("[subtotal]");
+      }
     });
   });
 
@@ -197,6 +247,26 @@ describe("parseTurkishNumber", () => {
     it("preserves 2 decimal places", () => {
       const result = parseTurkishNumber("1.234,50");
       expect(result.toFixed(2)).toBe("1234.50");
+    });
+
+    it("result is always a JavaScript number with max 4 decimal places (quantity precision)", () => {
+      // 2 decimal places
+      const r1 = parseTurkishNumber("1234,56");
+      expect(r1.dp()).toBeLessThanOrEqual(4);
+      expect(r1.toNumber()).toBe(1234.56);
+
+      // 4 decimal places
+      const r2 = parseTurkishNumber("0.1234");
+      expect(r2.dp()).toBeLessThanOrEqual(4);
+
+      // Plain integer: 0 decimal places
+      const r3 = parseTurkishNumber("100");
+      expect(r3.dp()).toBe(0);
+
+      // Verify .toNumber() produces a valid JS number
+      expect(typeof r1.toNumber()).toBe("number");
+      expect(typeof r2.toNumber()).toBe("number");
+      expect(typeof r3.toNumber()).toBe("number");
     });
   });
 });

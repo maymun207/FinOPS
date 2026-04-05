@@ -28,6 +28,18 @@ describe("parseExcelDate", () => {
       expect(parseExcelDate(61)).toBe("1900-03-01");
     });
 
+    it("serial 60 is skipped (Lotus 1-2-3 bug: 1900-02-29 does not exist)", () => {
+      // Serial 60 in Excel represents the phantom Feb 29, 1900.
+      // Since 1900 is NOT a leap year, this date doesn't exist.
+      // Our parser maps serial 60 to the same date as serial 59 (Feb 28).
+      const result = parseExcelDate(60);
+      expect(result).toBe("1900-02-28");
+      // Verify the gap: serial 59 and 60 both map to Feb 28,
+      // then serial 61 jumps to Mar 1
+      expect(parseExcelDate(59)).toBe("1900-02-28");
+      expect(parseExcelDate(61)).toBe("1900-03-01");
+    });
+
     it("43831 → '2020-01-01'", () => {
       expect(parseExcelDate(43831)).toBe("2020-01-01");
     });
