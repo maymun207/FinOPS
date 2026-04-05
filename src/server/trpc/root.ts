@@ -10,6 +10,8 @@ import { categoryMappingsRouter } from "./routers/category-mappings";
 import { dashboardRouter } from "./routers/dashboard";
 import { paymentsRouter } from "./routers/payments";
 import { auditLogRouter } from "./routers/audit-log";
+import { importRouter } from "./routers/import";
+import { quarantineRouter } from "./routers/quarantine";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -76,6 +78,12 @@ export const appRouter = createTRPCRouter({
 
   /** Audit Log — immutable log viewer (admin) */
   auditLog: auditLogRouter,
+
+  /** Import Pipeline — Excel/CSV upload → quarantine */
+  import: importRouter,
+
+  /** Quarantine — review, approve, reject imported records */
+  quarantine: quarantineRouter,
 });
 
 export type AppRouter = typeof appRouter;
