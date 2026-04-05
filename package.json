@@ -1,0 +1,85 @@
+{
+  "name": "finops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0",
+    "lint:strict": "eslint . --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "seed": "tsx supabase/seed/run-seed.ts",
+    "ci:check": "pnpm type-check && pnpm lint:strict && pnpm test"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.0.8",
+    "@sentry/nextjs": "^10.47.0",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "@t3-oss/env-nextjs": "^0.13.11",
+    "@tanstack/react-query": "^5.96.2",
+    "@tremor/react": "^3.18.7",
+    "@trpc/client": "11.16.0",
+    "@trpc/react-query": "11.16.0",
+    "@trpc/server": "11.16.0",
+    "decimal.js": "^10.6.0",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.7.0",
+    "next": "^15.5.14",
+    "pg": "^8.20.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "server-only": "^0.0.1",
+    "superjson": "^2.2.6",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/decimal.js": "^7.4.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "@vitest/ui": "^4.1.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.2.0",
+    "eslint-config-next": "^16.2.2",
+    "happy-dom": "^20.8.9",
+    "jsdom": "^29.0.1",
+    "jsonwebtoken": "^9.0.3",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@sentry/cli",
+      "esbuild",
+      "sharp"
+    ],
+    "peerDependencyRules": {
+      "ignoreMissing": [],
+      "allowedVersions": {
+        "react": "19",
+        "react-dom": "19"
+      }
+    }
+  }
+}
