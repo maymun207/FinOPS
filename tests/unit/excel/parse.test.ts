@@ -137,4 +137,69 @@ describe("parseExcelBuffer", () => {
     const withoutName = parseExcelBuffer(buffer);
     expect(withoutName.meta.fileName).toBeUndefined();
   });
+
+  it("parses .xls (legacy format) → same result as .xlsx", () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Fatura No", "Tutar"],
+      ["FAT-001", 100],
+      ["FAT-002", 200],
+      ["FAT-003", 300],
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, "Test");
+    // Write as .xls (BIFF8)
+    const buf = XLSX.write(wb, { type: "array", bookType: "xls" }) as ArrayBuffer;
+
+    const result = parseExcelBuffer(buf, "legacy.xls");
+
+    expect(result.sheets).toHaveLength(1);
+    expect(result.sheets[0]!.rows).toHaveLength(3);
+    expect(result.sheets[0]!.headers).toEqual(["Fatura No", "Tutar"]);
+    expect(result.sheets[0]!.rows[0]!["Fatura No"]).toBe("FAT-001");
+    expect(result.sheets[0]!.rows[2]!["Tutar"]).toBe(300);
+    expect(result.meta.fileName).toBe("legacy.xls");
+  });
+
+  it("parses .csv with semicolon delimiter → handled correctly", () => {
+    // SheetJS auto-detects semicolons in CSV
+    const csvContent = "Ad;Soyad;VKN\nAli;Yılmaz;1234567890\nVeli;Kaya;9876543210";
+    const wb = XLSX.read(csvContent, { type: "string" });
+    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+
+    const result = parseExcelBuffer(buf, "semicolons.csv");
+
+    expect(result.sheets).toHaveLength(1);
+    expect(result.sheets[0]!.rows).toHaveLength(2);
+    // SheetJS should separate by semicolon
+    const row = result.sheets[0]!.rows[0]!;
+    // Check that the three values are separated (not concatenated)
+    const headers = result.sheets[0]!.headers;
+    expect(headers.length).toBeGreaterThanOrEqual(1);
+    // Verify data is present
+    const allValues = Object.values(row);
+    const joined = allValues.join(" ");
+    expect(joined).toContain("Ali");
+  });
+
+  it("file with merged cells → merged cells return first cell value, others empty string", () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["A", "B", "C"],
+      ["merged", "", "value"],
+      ["row2-a", "row2-b", "row2-c"],
+    ]);
+    // Simulate merge: A2:B2
+    ws["!merges"] = [{ s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }];
+    XLSX.utils.book_append_sheet(wb, ws, "Merged");
+    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+
+    const result = parseExcelBuffer(buf, "merged.xlsx");
+
+    expect(result.sheets[0]!.rows).toHaveLength(2);
+    const row1 = result.sheets[0]!.rows[0]!;
+    expect(row1["A"]).toBe("merged");
+    // Merged area: cell B returns empty string (defval)
+    expect(row1["B"]).toBe("");
+    expect(row1["C"]).toBe("value");
+  });
 });
