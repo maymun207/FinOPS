@@ -46,7 +46,7 @@ export const jobsRouter = createTRPCRouter({
   triggerReport: companyProcedure
     .input(
       z.object({
-        reportType: z.enum(["balance_sheet", "income_statement", "trial_balance"]),
+        reportType: z.enum(["trial_balance", "balance_sheet", "income_statement", "kdv_summary"]),
         fiscalPeriodId: z.string().uuid(),
         format: z.enum(["pdf", "xlsx"]).default("pdf"),
       })

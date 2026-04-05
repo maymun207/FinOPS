@@ -1,15 +1,91 @@
 /**
- * report-generate — Report generation task (placeholder — Step 18).
+ * report-generate — Trigger.dev task for generating financial reports.
  *
- * Purpose:
- *   Generates financial reports (balance sheet, income statement,
- *   trial balance) as PDF/Excel. Called on-demand from the dashboard.
+ * Supports two output formats:
+ *   - xlsx: ExcelJS template-based export (Step 15)
+ *   - pdf:  Playwright headless PDF capture of RSC render target (Step 16)
  *
- * Placeholder: Returns mock report metadata.
+ * Flow:
+ *   1. Accept { reportType, companyId, periodId, format }
+ *   2. Generate report buffer (Excel or PDF)
+ *   3. Upload to R2
+ *   4. Return presigned download URL (15-min TTL)
  */
 import { task, logger } from "@trigger.dev/sdk/v3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { db } from "@/server/db";
+import { sql } from "drizzle-orm";
+import {
+  exportMizanReport,
+  exportBilancoReport,
+  exportGelirTablosuReport,
+  exportKdvBeyanReport,
+  type MizanRow,
+  type BilancoRow,
+  type GelirTablosuRow,
+  type KdvBeyanRow,
+} from "@/lib/excel/export-templates";
+import { generatePDF } from "@/lib/pdf/playwright-pdf";
 
-export type ReportType = "balance_sheet" | "income_statement" | "trial_balance";
+export type ReportType =
+  | "trial_balance"
+  | "balance_sheet"
+  | "income_statement"
+  | "kdv_summary";
+
+// ── S3 client for Cloudflare R2 ────────────────────────────────────
+
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "",
+  },
+});
+
+const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME ?? "finops-imports";
+const PRESIGNED_URL_TTL_SECONDS = 15 * 60; // 15 minutes
+
+// ── Report type → PDF route mapping ────────────────────────────────
+
+const PDF_ROUTES: Record<ReportType, string> = {
+  trial_balance: "mizan",
+  balance_sheet: "bilanco",
+  income_statement: "gelir-tablosu",
+  kdv_summary: "kdv-beyanname",
+};
+
+const REPORT_LABELS: Record<ReportType, string> = {
+  trial_balance: "Mizan",
+  balance_sheet: "Bilanço",
+  income_statement: "Gelir Tablosu",
+  kdv_summary: "KDV Beyanname",
+};
+
+// ── Excel generation ───────────────────────────────────────────────
+
+async function generateExcelBuffer(
+  reportType: ReportType,
+  data: unknown,
+  companyName?: string
+): Promise<Buffer> {
+  switch (reportType) {
+    case "trial_balance":
+      return exportMizanReport(data as MizanRow[], companyName);
+    case "balance_sheet":
+      return exportBilancoReport(data as BilancoRow[], companyName);
+    case "income_statement":
+      return exportGelirTablosuReport(data as GelirTablosuRow[], companyName);
+    case "kdv_summary":
+      return exportKdvBeyanReport(data as KdvBeyanRow[], companyName);
+    default:
+      throw new Error(`Unknown report type: ${reportType}`);
+  }
+}
+
+// ── Task definition ────────────────────────────────────────────────
 
 export const reportGenerateTask = task({
   id: "report-generate",
@@ -17,32 +93,108 @@ export const reportGenerateTask = task({
   run: async (payload: {
     companyId: string;
     reportType: ReportType;
-    fiscalPeriodId: string;
+    periodId: string;
     format: "pdf" | "xlsx";
   }) => {
-    logger.info("Starting report generation (placeholder)", {
+    logger.info("Starting report generation", {
       reportType: payload.reportType,
       format: payload.format,
       companyId: payload.companyId,
     });
 
-    // Step 18 will implement:
-    // 1. Query aggregated financial data for the period
-    // 2. Apply TDHP account structure
-    // 3. Generate report using template
-    // 4. Upload to R2
-    // 5. Return download URL
+    let buffer: Buffer;
+    let contentType: string;
+    let fileExtension: string;
 
-    const mockResult = {
+    if (payload.format === "pdf") {
+      // ── PDF path: Playwright → RSC render target ──────────────
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const route = PDF_ROUTES[payload.reportType];
+      const url = `${baseUrl}/reports/${route}/pdf/${payload.periodId}`;
+
+      logger.info("Generating PDF from RSC target", { url });
+
+      buffer = await generatePDF({
+        url,
+        clerkJwt: process.env.CLERK_SERVICE_JWT,
+        cookieDomain: new URL(baseUrl).hostname,
+      });
+
+      contentType = "application/pdf";
+      fileExtension = "pdf";
+    } else {
+      // ── Excel path: cached DuckDB data → ExcelJS ──────────────
+      const cached = await db.execute(
+        sql`SELECT data FROM cached_report_results
+            WHERE company_id = ${payload.companyId}
+              AND report_type = ${payload.reportType}
+            LIMIT 1`
+      );
+
+      const cacheRows = cached.rows as Array<{ data: unknown }>;
+      if (cacheRows.length === 0 || !cacheRows[0]?.data) {
+        logger.warn("No cached data — run DuckDB sync first");
+        return {
+          reportType: payload.reportType,
+          format: payload.format,
+          status: "no_data" as const,
+          downloadUrl: null,
+          generatedAt: new Date().toISOString(),
+        };
+      }
+
+      const companyResult = await db.execute(
+        sql`SELECT name FROM companies WHERE id = ${payload.companyId} LIMIT 1`
+      );
+      const companyName = (companyResult.rows as Array<{ name: string }>)[0]?.name;
+
+      buffer = await generateExcelBuffer(
+        payload.reportType,
+        cacheRows[0].data,
+        companyName ?? undefined
+      );
+
+      contentType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      fileExtension = "xlsx";
+    }
+
+    logger.info("Report generated", {
+      sizeBytes: buffer.length,
+      format: payload.format,
+    });
+
+    // ── Upload to R2 ──────────────────────────────────────────────
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const r2Key = `reports/${payload.companyId}/${payload.reportType}/${timestamp}.${fileExtension}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: r2Key,
+        Body: buffer,
+        ContentType: contentType,
+      })
+    );
+
+    logger.info("Uploaded to R2", { r2Key });
+
+    // ── Presigned URL (15 min) ──────────────────────────────────
+    const downloadUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({ Bucket: R2_BUCKET, Key: r2Key }),
+      { expiresIn: PRESIGNED_URL_TTL_SECONDS }
+    );
+
+    return {
       reportType: payload.reportType,
       format: payload.format,
-      fiscalPeriodId: payload.fiscalPeriodId,
-      status: "placeholder" as const,
-      downloadUrl: null as string | null,
+      status: "completed" as const,
+      downloadUrl,
+      r2Key,
+      sizeBytes: buffer.length,
+      expiresInSeconds: PRESIGNED_URL_TTL_SECONDS,
       generatedAt: new Date().toISOString(),
     };
-
-    logger.info("Report generation complete (placeholder)", mockResult);
-    return mockResult;
   },
 });

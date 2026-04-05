@@ -14,6 +14,7 @@ import { importRouter } from "./routers/import";
 import { quarantineRouter } from "./routers/quarantine";
 import { jobsRouter } from "./routers/jobs";
 import { reportsRouter } from "./routers/reports";
+import { exportsRouter } from "./routers/exports";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -92,6 +93,9 @@ export const appRouter = createTRPCRouter({
 
   /** Reports — DuckDB analytical views (mizan, gelir tablosu, etc.) */
   report: reportsRouter,
+
+  /** Exports — Excel data exports (hareketler, cariler, faturalar) */
+  export: exportsRouter,
 });
 
 export type AppRouter = typeof appRouter;
