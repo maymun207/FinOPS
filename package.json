@@ -18,6 +18,7 @@
     "ci:check": "pnpm type-check && pnpm lint:strict && pnpm test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1024.0",
     "@clerk/nextjs": "^7.0.8",
     "@sentry/nextjs": "^10.47.0",
     "@supabase/ssr": "^0.10.0",
@@ -25,6 +26,7 @@
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-query": "^5.96.2",
     "@tremor/react": "^3.18.7",
+    "@trigger.dev/sdk": "^3.3.17",
     "@trpc/client": "11.16.0",
     "@trpc/react-query": "11.16.0",
     "@trpc/server": "11.16.0",

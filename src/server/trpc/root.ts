@@ -12,6 +12,7 @@ import { paymentsRouter } from "./routers/payments";
 import { auditLogRouter } from "./routers/audit-log";
 import { importRouter } from "./routers/import";
 import { quarantineRouter } from "./routers/quarantine";
+import { jobsRouter } from "./routers/jobs";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -84,6 +85,9 @@ export const appRouter = createTRPCRouter({
 
   /** Quarantine — review, approve, reject imported records */
   quarantine: quarantineRouter,
+
+  /** Jobs — Trigger.dev background jobs (import, reports, sync) */
+  job: jobsRouter,
 });
 
 export type AppRouter = typeof appRouter;
