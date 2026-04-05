@@ -28,6 +28,8 @@
     "@trpc/client": "11.16.0",
     "@trpc/react-query": "11.16.0",
     "@trpc/server": "11.16.0",
+    "ag-grid-community": "^35.2.0",
+    "ag-grid-react": "^35.2.0",
     "decimal.js": "^10.6.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.7.0",

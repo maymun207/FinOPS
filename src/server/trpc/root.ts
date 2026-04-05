@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "./trpc";
 import { companiesRouter } from "./routers/companies";
 import { chartOfAccountsRouter } from "./routers/chart-of-accounts";
 import { fiscalPeriodsRouter } from "./routers/fiscal-periods";
+import { journalEntriesRouter } from "./routers/journal-entries";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -16,6 +17,9 @@ import { fiscalPeriodsRouter } from "./routers/fiscal-periods";
  *   /api/trpc/fiscalPeriod.getCurrent       — current open period
  *   /api/trpc/fiscalPeriod.closePeriod      — close a period
  *   /api/trpc/fiscalPeriod.openPeriod       — reopen a period
+ *   /api/trpc/journal.list                  — journal entry lines (flattened)
+ *   /api/trpc/journal.getById               — single journal entry + lines
+ *   /api/trpc/journal.create                — create entry with lines
  */
 export const appRouter = createTRPCRouter({
   /**
@@ -32,6 +36,9 @@ export const appRouter = createTRPCRouter({
 
   /** Fiscal Periods — manage accounting periods */
   fiscalPeriod: fiscalPeriodsRouter,
+
+  /** Journal Entries — yevmiye defteri */
+  journal: journalEntriesRouter,
 });
 
 export type AppRouter = typeof appRouter;
