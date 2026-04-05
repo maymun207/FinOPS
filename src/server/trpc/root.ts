@@ -15,6 +15,7 @@ import { quarantineRouter } from "./routers/quarantine";
 import { jobsRouter } from "./routers/jobs";
 import { reportsRouter } from "./routers/reports";
 import { exportsRouter } from "./routers/exports";
+import { cfoRouter } from "./routers/cfo";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -96,6 +97,9 @@ export const appRouter = createTRPCRouter({
 
   /** Exports — Excel data exports (hareketler, cariler, faturalar) */
   export: exportsRouter,
+
+  /** Virtual CFO — AI-powered financial assistant */
+  cfo: cfoRouter,
 });
 
 export type AppRouter = typeof appRouter;
