@@ -13,6 +13,7 @@ import { auditLogRouter } from "./routers/audit-log";
 import { importRouter } from "./routers/import";
 import { quarantineRouter } from "./routers/quarantine";
 import { jobsRouter } from "./routers/jobs";
+import { reportsRouter } from "./routers/reports";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -88,6 +89,9 @@ export const appRouter = createTRPCRouter({
 
   /** Jobs — Trigger.dev background jobs (import, reports, sync) */
   job: jobsRouter,
+
+  /** Reports — DuckDB analytical views (mizan, gelir tablosu, etc.) */
+  report: reportsRouter,
 });
 
 export type AppRouter = typeof appRouter;

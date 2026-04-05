@@ -34,6 +34,7 @@
     "ag-grid-react": "^35.2.0",
     "decimal.js": "^10.6.0",
     "drizzle-orm": "^0.45.2",
+    "duckdb": "^1.4.4",
     "lucide-react": "^1.7.0",
     "next": "^15.5.14",
     "pg": "^8.20.0",
@@ -77,7 +78,9 @@
     "onlyBuiltDependencies": [
       "@clerk/shared",
       "@sentry/cli",
+      "duckdb",
       "esbuild",
+      "protobufjs",
       "sharp"
     ],
     "peerDependencyRules": {
