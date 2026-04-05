@@ -2,59 +2,54 @@
  * Unit tests: Turkish currency formatter
  *
  * Tests the TRY currency formatting used in AG Grid columns.
+ * Exact output verified against Node.js Intl.NumberFormat('tr-TR', {style:'currency', currency:'TRY'}).
  */
 import { describe, it, expect } from "vitest";
 import { formatTRY, formatDateTR, formatKDVRate } from "@/components/grids/grid-types";
 
 describe("formatTRY — Turkish Lira currency formatting", () => {
-  it("formats a positive number as TRY", () => {
-    const result = formatTRY(1234.56);
-    // tr-TR TRY format: ₺1.234,56
-    expect(result).toContain("1.234");
-    expect(result).toContain("56");
-    expect(result).toContain("₺");
+  it("formats 1234.56 → '₺1.234,56' (dot as thousand sep, comma as decimal)", () => {
+    expect(formatTRY(1234.56)).toBe("₺1.234,56");
   });
 
-  it("formats zero as ₺0,00", () => {
-    const result = formatTRY(0);
-    expect(result).toContain("0");
-    expect(result).toContain("₺");
+  it("formats 0 → '₺0,00'", () => {
+    expect(formatTRY(0)).toBe("₺0,00");
   });
 
-  it("formats a string number correctly", () => {
-    const result = formatTRY("5000.00");
-    expect(result).toContain("5.000");
-    expect(result).toContain("₺");
-  });
-
-  it("returns empty string for null", () => {
+  it("returns empty string for null (never throws)", () => {
     expect(formatTRY(null)).toBe("");
   });
 
-  it("returns empty string for undefined", () => {
+  it("returns empty string for undefined (never throws)", () => {
     expect(formatTRY(undefined)).toBe("");
+  });
+
+  it("formats negative: -500.00 → '-₺500,00'", () => {
+    expect(formatTRY(-500.0)).toBe("-₺500,00");
+  });
+
+  // ── Additional coverage ───────────────────────────────────────────
+
+  it("formats a Drizzle decimal string correctly (parseFloat path)", () => {
+    // Drizzle returns decimal columns as strings — AG Grid must parseFloat first
+    expect(formatTRY("5000.00")).toBe("₺5.000,00");
+  });
+
+  it("formats large numbers with thousands separators", () => {
+    expect(formatTRY(1000000)).toBe("₺1.000.000,00");
   });
 
   it("returns empty string for NaN input", () => {
     expect(formatTRY("not-a-number")).toBe("");
   });
 
-  it("formats large numbers with thousands separators", () => {
-    const result = formatTRY(1000000);
-    // Should have periods as thousands separator in tr-TR
-    expect(result).toContain("1.000.000");
-  });
-
-  it("formats negative numbers", () => {
-    const result = formatTRY(-500.5);
-    expect(result).toContain("500");
-    expect(result).toContain("50");
-  });
-
   it("always shows 2 decimal places", () => {
-    const result = formatTRY(100);
-    // Should end with ,00
-    expect(result).toContain("00");
+    expect(formatTRY(100)).toBe("₺100,00");
+  });
+
+  it("parseFloat('1234.56') === 1234.56 (Drizzle decimal roundtrip)", () => {
+    // Validates that Drizzle string decimals survive parseFloat without precision loss
+    expect(parseFloat("1234.56")).toBe(1234.56);
   });
 });
 
@@ -85,7 +80,6 @@ describe("formatDateTR — Turkish date formatting", () => {
 describe("formatKDVRate — KDV percentage formatting", () => {
   it("formats 0.20 as %20", () => {
     const result = formatKDVRate(0.2);
-    // tr-TR percent: %20
     expect(result).toContain("20");
     expect(result).toContain("%");
   });

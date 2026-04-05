@@ -112,6 +112,7 @@ describe.skipIf(!DB_URL)("Fiscal Periods — tRPC router", () => {
 
     const result = await caller.fiscalPeriod.closePeriod({
       periodId: testPeriodId,
+      confirmation: "2026-Q1",
     });
 
     expect(result.isClosed).toBe(true);
@@ -130,7 +131,7 @@ describe.skipIf(!DB_URL)("Fiscal Periods — tRPC router", () => {
 
     // Period was closed in the previous test — try to close again
     await expect(
-      caller.fiscalPeriod.closePeriod({ periodId: testPeriodId })
+      caller.fiscalPeriod.closePeriod({ periodId: testPeriodId, confirmation: "2026-Q1" })
     ).rejects.toThrow("Period is already closed");
   });
 
@@ -152,6 +153,7 @@ describe.skipIf(!DB_URL)("Fiscal Periods — tRPC router", () => {
     await expect(
       caller.fiscalPeriod.closePeriod({
         periodId: "00000000-0000-0000-0000-000000000000",
+        confirmation: "2026-Q1",
       })
     ).rejects.toThrow("Fiscal period not found");
   });

@@ -4,6 +4,12 @@ import { companiesRouter } from "./routers/companies";
 import { chartOfAccountsRouter } from "./routers/chart-of-accounts";
 import { fiscalPeriodsRouter } from "./routers/fiscal-periods";
 import { journalEntriesRouter } from "./routers/journal-entries";
+import { contactsRouter } from "./routers/contacts";
+import { invoicesRouter } from "./routers/invoices";
+import { categoryMappingsRouter } from "./routers/category-mappings";
+import { dashboardRouter } from "./routers/dashboard";
+import { paymentsRouter } from "./routers/payments";
+import { auditLogRouter } from "./routers/audit-log";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -20,6 +26,19 @@ import { journalEntriesRouter } from "./routers/journal-entries";
  *   /api/trpc/journal.list                  — journal entry lines (flattened)
  *   /api/trpc/journal.getById               — single journal entry + lines
  *   /api/trpc/journal.create                — create entry with lines
+ *   /api/trpc/contact.list                  — contacts list
+ *   /api/trpc/contact.getById               — single contact
+ *   /api/trpc/contact.create                — create contact
+ *   /api/trpc/contact.update                — update contact
+ *   /api/trpc/contact.delete                — delete contact
+ *   /api/trpc/invoice.list                  — invoices list
+ *   /api/trpc/invoice.getById               — single invoice + line items
+ *   /api/trpc/invoice.create                — create invoice + auto-journal
+ *   /api/trpc/invoice.delete                — delete invoice + cascade journal
+ *   /api/trpc/categoryMapping.list          — category mappings
+ *   /api/trpc/categoryMapping.create        — create mapping
+ *   /api/trpc/categoryMapping.update        — update mapping
+ *   /api/trpc/categoryMapping.delete        — delete mapping
  */
 export const appRouter = createTRPCRouter({
   /**
@@ -39,6 +58,24 @@ export const appRouter = createTRPCRouter({
 
   /** Journal Entries — yevmiye defteri */
   journal: journalEntriesRouter,
+
+  /** Contacts — cari kartlar (müşteri/tedarikçi) */
+  contact: contactsRouter,
+
+  /** Invoices — fatura yönetimi */
+  invoice: invoicesRouter,
+
+  /** Category Mappings — kategori ↔ TDHP eşleştirme */
+  categoryMapping: categoryMappingsRouter,
+
+  /** Dashboard — KPI aggregation */
+  dashboard: dashboardRouter,
+
+  /** Payments — ödeme kaydı + journal entry */
+  payment: paymentsRouter,
+
+  /** Audit Log — immutable log viewer (admin) */
+  auditLog: auditLogRouter,
 });
 
 export type AppRouter = typeof appRouter;

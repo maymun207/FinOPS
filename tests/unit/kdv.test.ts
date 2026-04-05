@@ -8,6 +8,7 @@
  * Tests verify string equality for exact precision matching.
  */
 import { describe, it, expect } from "vitest";
+import Decimal from "decimal.js";
 import {
   calculateKdv,
   calculateTotal,
@@ -38,6 +39,20 @@ describe("roundTo", () => {
   it("handles large numbers without floating-point drift", () => {
     expect(roundTo("9999999999999.99")).toBe("9999999999999.99");
     expect(roundTo("9999999999999.995")).toBe("10000000000000.00");
+  });
+});
+
+describe("Decimal arithmetic — no floating-point errors", () => {
+  it("0.1 + 0.2 = 0.3 exactly (not 0.30000000000000004)", () => {
+    // This is the canonical floating-point trap.
+    // decimal.js must return "0.30" not "0.30000000000000004"
+    expect(roundTo(new Decimal("0.1").plus("0.2").toNumber())).toBe("0.30");
+  });
+
+  it("Decimal addition matches: 0.1 + 0.2 = 0.3 (via Decimal constructor)", () => {
+    const result = new Decimal("0.1").plus("0.2");
+    expect(result.toFixed(2)).toBe("0.30");
+    expect(result.toNumber()).toBe(0.3);
   });
 });
 
@@ -168,5 +183,42 @@ describe("extractSubtotalFromTotal", () => {
 
   it("handles string inputs", () => {
     expect(extractSubtotalFromTotal("1200.00", "20")).toBe("1000.00");
+  });
+});
+
+describe("computeLineItem — spec signature (all string args)", () => {
+  /**
+   * Matches the exact function signature from the Step 8 spec image:
+   *   computeLineItem(qty: string, unitPrice: string, kdvRate: string)
+   *
+   * The implementation is `calculateLineItem` which accepts Decimal.Value
+   * (string | number), so this validates the string-input path.
+   */
+  it("qty='10', unitPrice='50', kdvRate='20' → subtotal 500, kdv 100, total 600", () => {
+    const result = calculateLineItem("10", "50", "20");
+    expect(result.subtotal).toBe("500.00");
+    expect(result.kdvAmount).toBe("100.00");
+    expect(result.total).toBe("600.00");
+  });
+
+  it("qty='1', unitPrice='1000', kdvRate='20' → subtotal 1000, kdv 200, total 1200", () => {
+    const result = calculateLineItem("1", "1000", "20");
+    expect(result.subtotal).toBe("1000.00");
+    expect(result.kdvAmount).toBe("200.00");
+    expect(result.total).toBe("1200.00");
+  });
+
+  it("qty='2.5', unitPrice='40.00', kdvRate='10' → subtotal 100, kdv 10, total 110", () => {
+    const result = calculateLineItem("2.5", "40.00", "10");
+    expect(result.subtotal).toBe("100.00");
+    expect(result.kdvAmount).toBe("10.00");
+    expect(result.total).toBe("110.00");
+  });
+
+  it("exempt kdvRate='0' → kdv 0, total = subtotal", () => {
+    const result = calculateLineItem("5", "200", "0");
+    expect(result.subtotal).toBe("1000.00");
+    expect(result.kdvAmount).toBe("0.00");
+    expect(result.total).toBe("1000.00");
   });
 });

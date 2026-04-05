@@ -50,12 +50,23 @@ export const fiscalPeriodsRouter = createTRPCRouter({
   /**
    * Close a fiscal period — prevents further transactions.
    *
+   * SAFETY PATTERN: Closing is irreversible. The caller must provide
+   * `confirmation` which MUST exactly match the period's `name`.
+   * This is validated server-side, not just in the UI.
+   *
    * Sets is_closed = true, closed_at = now(), closed_by = current user.
    * Throws CONFLICT if the period is already closed.
    * Throws NOT_FOUND if the period doesn't exist or belongs to another company.
+   * Throws BAD_REQUEST if confirmation doesn't match period name.
    */
   closePeriod: companyProcedure
-    .input(z.object({ periodId: z.uuid() }))
+    .input(
+      z.object({
+        periodId: z.string().uuid(),
+        /** Must exactly match the period's name (e.g., "2024-03") */
+        confirmation: z.string().min(1, "Onay metni zorunludur"),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify period belongs to this company and is still open
       const existing = await ctx.db
@@ -83,6 +94,14 @@ export const fiscalPeriodsRouter = createTRPCRouter({
         });
       }
 
+      // SAFETY CHECK: confirmation must exactly match period name
+      if (input.confirmation !== existing.name) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Onay metni dönem adıyla eşleşmiyor. "${existing.name}" yazmanız gerekiyor.`,
+        });
+      }
+
       // Close the period
       const updated = await ctx.db
         .update(fiscalPeriods)
@@ -104,7 +123,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
    * Resets is_closed, closed_at, and closed_by.
    */
   openPeriod: companyProcedure
-    .input(z.object({ periodId: z.uuid() }))
+    .input(z.object({ periodId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db
         .select()
