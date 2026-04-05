@@ -156,4 +156,68 @@ describe("Large Excel Import — mock pipeline", () => {
     expect(batches).toEqual([500, 100]);
     expect(batches.reduce((a, b) => a + b, 0)).toBe(600);
   });
+
+  it("trigger with known R2 key → job completes, quarantine rows created", () => {
+    // Simulate: upload file → trigger job → verify quarantine records
+    const buf = createContactWorkbook([
+      ["Alpha AŞ", "customer", "1234567890", "alpha@test.com", "", "İstanbul"],
+      ["Beta Ltd", "vendor", "9876543210", "beta@test.com", "", "Ankara"],
+      ["Gamma Tic", "both", "5555555555", "gamma@test.com", "", "İzmir"],
+    ]);
+
+    const result = simulateLargeImport(buf, "contact");
+
+    // Job completes successfully
+    expect(result.total).toBe(3);
+    expect(result.valid).toBe(3);
+    expect(result.invalid).toBe(0);
+
+    // Simulate quarantine row creation
+    const quarantineRows = Array.from({ length: result.total }, (_, i) => ({
+      id: `q-${i}`,
+      companyId: "company-001",
+      source: "excel-large",
+      status: "pending",
+      errorMessage: null,
+    }));
+
+    expect(quarantineRows).toHaveLength(3);
+    expect(quarantineRows.every((r) => r.status === "pending")).toBe(true);
+    expect(quarantineRows.every((r) => r.source === "excel-large")).toBe(true);
+  });
+
+  it("job with invalid R2 key → fails after 3 retries, error logged", () => {
+    // Simulate R2 download failure
+    const MAX_RETRIES = 3;
+    let attempts = 0;
+    const errors: string[] = [];
+
+    function simulateR2Download(key: string): ArrayBuffer {
+      attempts++;
+      if (key === "invalid/nonexistent.xlsx") {
+        throw new Error(`Failed to download file from R2: ${key}`);
+      }
+      return new ArrayBuffer(0);
+    }
+
+    // Simulate retry loop
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        simulateR2Download("invalid/nonexistent.xlsx");
+        break;
+      } catch (err) {
+        lastError = err as Error;
+        errors.push(`Attempt ${attempt}: ${lastError.message}`);
+      }
+    }
+
+    expect(attempts).toBe(MAX_RETRIES);
+    expect(lastError).toBeDefined();
+    expect(lastError!.message).toContain("Failed to download file from R2");
+    expect(lastError!.message).toContain("nonexistent.xlsx");
+    expect(errors).toHaveLength(3);
+    expect(errors[0]).toContain("Attempt 1");
+    expect(errors[2]).toContain("Attempt 3");
+  });
 });

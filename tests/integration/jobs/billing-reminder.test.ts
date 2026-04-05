@@ -22,6 +22,8 @@ interface MockInvoice {
   grandTotal: string;
   status: string;
   companyId: string;
+  contactName: string | null;
+  contactEmail: string | null;
 }
 
 function createMockInvoice(
@@ -35,18 +37,25 @@ function createMockInvoice(
     grandTotal: "1000.00",
     status: "ISSUED",
     companyId: "company-001",
+    contactName: "Test Contact",
+    contactEmail: "test@resend.dev",
     ...overrides,
   };
 }
 
 /**
  * Simulate the billing reminder task logic.
- * Returns reminders for invoices matching the criteria.
+ * Handles contacts without email gracefully — logs warning, never throws.
  */
 function simulateBillingReminder(
   invoices: MockInvoice[],
   today: Date = new Date()
-): { reminders_sent: number; reminders: Array<{ id: string; type: string }> } {
+): {
+  reminders_sent: number;
+  skipped_no_email: number;
+  reminders: Array<{ id: string; type: string }>;
+  warnings: string[];
+} {
   const todayStr = today.toISOString().split("T")[0]!;
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
@@ -61,19 +70,36 @@ function simulateBillingReminder(
   });
 
   const reminders: Array<{ id: string; type: string }> = [];
+  const warnings: string[] = [];
+  let skippedNoEmail = 0;
 
   for (const inv of eligible) {
+    let type: string | null = null;
+
     // Overdue: due date < today
     if (inv.dueDate < todayStr) {
-      reminders.push({ id: inv.id, type: "OVERDUE" });
+      type = "OVERDUE";
     }
     // Upcoming: due date between today and next week
     else if (inv.dueDate >= todayStr && inv.dueDate <= nextWeekStr) {
-      reminders.push({ id: inv.id, type: "UPCOMING" });
+      type = "UPCOMING";
     }
+
+    if (!type) continue;
+
+    // Check if contact has email — handle gracefully
+    if (!inv.contactEmail) {
+      warnings.push(
+        `${type} reminder skipped — contact "${inv.contactName ?? "unknown"}" has no email (${inv.invoiceNumber})`
+      );
+      skippedNoEmail++;
+      continue;
+    }
+
+    reminders.push({ id: inv.id, type });
   }
 
-  return { reminders_sent: reminders.length, reminders };
+  return { reminders_sent: reminders.length, skipped_no_email: skippedNoEmail, reminders, warnings };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────
@@ -127,11 +153,8 @@ describe("Billing Reminder — mock pipeline", () => {
 
   it("no qualifying invoices → { reminders_sent: 0 }", () => {
     const invoices = [
-      // All inbound
       createMockInvoice({ direction: "inbound", dueDate: in3Days }),
-      // All paid
       createMockInvoice({ status: "PAID", dueDate: yesterday }),
-      // Due in 10 days (outside 7-day window)
       createMockInvoice({ dueDate: in10Days, status: "ISSUED" }),
     ];
 
@@ -141,11 +164,11 @@ describe("Billing Reminder — mock pipeline", () => {
 
   it("mixed: 2 upcoming, 1 overdue, 1 paid, 1 cancelled → 3 reminders", () => {
     const invoices = [
-      createMockInvoice({ dueDate: in3Days, status: "ISSUED" }),      // upcoming
-      createMockInvoice({ dueDate: "2025-01-15", status: "ISSUED" }), // today = upcoming
-      createMockInvoice({ dueDate: lastWeek, status: "ISSUED" }),     // overdue
-      createMockInvoice({ dueDate: in3Days, status: "PAID" }),        // excluded
-      createMockInvoice({ dueDate: yesterday, status: "CANCELLED" }), // excluded
+      createMockInvoice({ dueDate: in3Days, status: "ISSUED" }),
+      createMockInvoice({ dueDate: "2025-01-15", status: "ISSUED" }),
+      createMockInvoice({ dueDate: lastWeek, status: "ISSUED" }),
+      createMockInvoice({ dueDate: in3Days, status: "PAID" }),
+      createMockInvoice({ dueDate: yesterday, status: "CANCELLED" }),
     ];
 
     const result = simulateBillingReminder(invoices, today);
@@ -153,5 +176,57 @@ describe("Billing Reminder — mock pipeline", () => {
     expect(result.reminders_sent).toBe(3);
     expect(result.reminders.filter((r) => r.type === "UPCOMING")).toHaveLength(2);
     expect(result.reminders.filter((r) => r.type === "OVERDUE")).toHaveLength(1);
+  });
+
+  it("Seed: 2 overdue, 1 not-yet-due → sends 2 emails, not 3", () => {
+    const invoices = [
+      createMockInvoice({ dueDate: lastWeek, status: "ISSUED", contactEmail: "a@resend.dev" }),
+      createMockInvoice({ dueDate: yesterday, status: "ISSUED", contactEmail: "b@resend.dev" }),
+      createMockInvoice({ dueDate: in10Days, status: "ISSUED", contactEmail: "c@resend.dev" }), // >7 days out
+    ];
+
+    const result = simulateBillingReminder(invoices, today);
+
+    expect(result.reminders_sent).toBe(2);
+    expect(result.reminders.every((r) => r.type === "OVERDUE")).toBe(true);
+    // The 3rd invoice is beyond the 7-day window
+    expect(result.skipped_no_email).toBe(0);
+  });
+
+  it("invoice with contact without email → handles gracefully, logs warning, continues", () => {
+    const invoices = [
+      createMockInvoice({
+        dueDate: in3Days,
+        status: "ISSUED",
+        contactName: "Emailsiz Firma",
+        contactEmail: null, // no email
+      }),
+      createMockInvoice({
+        dueDate: in3Days,
+        status: "ISSUED",
+        contactEmail: "valid@resend.dev",
+      }),
+      createMockInvoice({
+        dueDate: lastWeek,
+        status: "ISSUED",
+        contactName: "Diğer Firma",
+        contactEmail: null, // no email
+      }),
+    ];
+
+    const result = simulateBillingReminder(invoices, today);
+
+    // Only 1 reminder sent (the one with email)
+    expect(result.reminders_sent).toBe(1);
+
+    // 2 skipped due to no email
+    expect(result.skipped_no_email).toBe(2);
+
+    // Warnings logged for each skipped
+    expect(result.warnings).toHaveLength(2);
+    expect(result.warnings[0]).toContain("Emailsiz Firma");
+    expect(result.warnings[0]).toContain("has no email");
+    expect(result.warnings[1]).toContain("Diğer Firma");
+    expect(result.warnings[1]).toContain("OVERDUE");
   });
 });
