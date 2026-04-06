@@ -1,0 +1,133 @@
+<svg width="100%" viewBox="0 0 680 780" xmlns="http://www.w3.org/2000/svg" style="font-family: Arial, sans-serif; background: white;">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<!-- ── TIER LABEL: Browser ── -->
+<text font-size="12" x="40" y="28" fill="#888780">Browser (accountant)</text>
+<rect x="40" y="36" width="600" height="96" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<!-- Browser boxes -->
+<rect x="46" y="50" width="130" height="70" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="111" y="80" text-anchor="middle" fill="#085041">AG Grid</text>
+<text font-size="12" x="111" y="99" text-anchor="middle" fill="#0F6E56">Ledger, invoices</text>
+
+<rect x="192" y="50" width="130" height="70" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="257" y="80" text-anchor="middle" fill="#085041">ECharts</text>
+<text font-size="12" x="257" y="99" text-anchor="middle" fill="#0F6E56">KDV, cash flow</text>
+
+<rect x="338" y="50" width="130" height="70" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="403" y="80" text-anchor="middle" fill="#085041">CFO chat</text>
+<text font-size="12" x="403" y="99" text-anchor="middle" fill="#0F6E56">Virtual CFO UI</text>
+
+<rect x="484" y="50" width="150" height="70" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="559" y="80" text-anchor="middle" fill="#085041">Excel import</text>
+<text font-size="12" x="559" y="99" text-anchor="middle" fill="#0F6E56">SheetJS + mapping UI</text>
+
+<!-- Arrow: Browser → Next.js -->
+<line x1="340" y1="132" x2="340" y2="158" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- ── TIER LABEL: Next.js 15 ── -->
+<text font-size="12" x="40" y="152" fill="#888780">Next.js 15 — Vercel</text>
+<rect x="40" y="160" width="600" height="70" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<rect x="60" y="172" width="176" height="46" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="148" y="192" text-anchor="middle" fill="#3C3489">tRPC routers</text>
+<text font-size="12" x="148" y="209" text-anchor="middle" fill="#534AB7">Type-safe API layer</text>
+
+<rect x="252" y="172" width="176" height="46" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="192" text-anchor="middle" fill="#3C3489">Clerk middleware</text>
+<text font-size="12" x="340" y="209" text-anchor="middle" fill="#534AB7">Auth + org resolution</text>
+
+<rect x="444" y="172" width="176" height="46" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="532" y="192" text-anchor="middle" fill="#3C3489">API routes</text>
+<text font-size="12" x="532" y="209" text-anchor="middle" fill="#534AB7">Gemini proxy, R2 upload</text>
+
+<!-- Arrows: Next.js → down -->
+<line x1="200" y1="230" x2="200" y2="262" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="230" x2="340" y2="262" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="500" y1="230" x2="500" y2="262" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- ── TIER LABEL: Data + Jobs ── -->
+<text font-size="12" x="40" y="258" fill="#888780">Data + background jobs</text>
+<rect x="40" y="266" width="600" height="140" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<rect x="60" y="282" width="200" height="56" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="160" y="307" text-anchor="middle" fill="#2C2C2A">PostgreSQL (Supabase)</text>
+<text font-size="12" x="160" y="325" text-anchor="middle" fill="#5F5E5A">OLTP — double-entry ledger</text>
+
+<rect x="60" y="354" width="200" height="40" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="160" y="370" text-anchor="middle" fill="#2C2C2A">DuckDB</text>
+<text font-size="12" x="160" y="386" text-anchor="middle" fill="#5F5E5A">OLAP — reporting views</text>
+
+<rect x="278" y="282" width="184" height="112" rx="6" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="370" y="302" text-anchor="middle" fill="#633806">Trigger.dev v3</text>
+<text font-size="12" x="370" y="320" text-anchor="middle" fill="#854F0B">Billing reminders</text>
+<text font-size="12" x="370" y="336" text-anchor="middle" fill="#854F0B">DuckDB nightly sync</text>
+<text font-size="12" x="370" y="352" text-anchor="middle" fill="#854F0B">Excel large-file import</text>
+<text font-size="12" x="370" y="368" text-anchor="middle" fill="#854F0B">Report generation</text>
+
+<rect x="480" y="282" width="144" height="48" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="552" y="303" text-anchor="middle" fill="#2C2C2A">Cloudflare R2</text>
+<text font-size="12" x="552" y="320" text-anchor="middle" fill="#5F5E5A">Files, reports</text>
+
+<rect x="480" y="346" width="144" height="48" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="552" y="367" text-anchor="middle" fill="#2C2C2A">Resend</text>
+<text font-size="12" x="552" y="384" text-anchor="middle" fill="#5F5E5A">Transactional email</text>
+
+<!-- Arrow DuckDB sync from Trigger -->
+<line x1="278" y1="352" x2="264" y2="374" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- ── TIER LABEL: AI ── -->
+<text font-size="12" x="40" y="428" fill="#888780">AI layer</text>
+<rect x="40" y="436" width="600" height="96" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<rect x="60" y="450" width="176" height="70" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="148" y="476" text-anchor="middle" fill="#3C3489">Vanna.AI</text>
+<text font-size="12" x="148" y="496" text-anchor="middle" fill="#534AB7">pgvector training corpus</text>
+
+<rect x="252" y="450" width="176" height="70" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="476" text-anchor="middle" fill="#3C3489">Vercel AI SDK</text>
+<text font-size="12" x="340" y="496" text-anchor="middle" fill="#534AB7">Gemini provider wrapper</text>
+
+<rect x="444" y="450" width="176" height="70" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="532" y="476" text-anchor="middle" fill="#3C3489">Gemini Pro</text>
+<text font-size="12" x="532" y="496" text-anchor="middle" fill="#534AB7">SQL + summaries</text>
+
+<!-- Arrow: AI → Supabase (pgvector) -->
+<line x1="148" y1="450" x2="148" y2="406" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- ── TIER LABEL: Observability ── -->
+<text font-size="12" x="40" y="558" fill="#888780">Observability</text>
+<rect x="40" y="566" width="600" height="56" rx="8" fill="none" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<rect x="60" y="578" width="176" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="148" y="594" text-anchor="middle" fill="#2C2C2A">Sentry</text>
+<text font-size="12" x="148" y="609" text-anchor="middle" fill="#5F5E5A">Error tracking</text>
+
+<rect x="252" y="578" width="176" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="594" text-anchor="middle" fill="#2C2C2A">Axiom</text>
+<text font-size="12" x="340" y="609" text-anchor="middle" fill="#5F5E5A">Structured log queries</text>
+
+<rect x="444" y="578" width="176" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="532" y="594" text-anchor="middle" fill="#2C2C2A">OpenTelemetry</text>
+<text font-size="12" x="532" y="609" text-anchor="middle" fill="#5F5E5A">Distributed traces</text>
+
+<!-- ── GIB e-Fatura ── -->
+<rect x="40" y="648" width="600" height="44" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="668" text-anchor="middle" fill="#712B13">GIB e-Fatura / e-Arşiv</text>
+<text font-size="12" x="340" y="684" text-anchor="middle" fill="#993C1D">UBL 2.1 XML — durable Trigger.dev submission with retry</text>
+
+<!-- Legend -->
+<rect x="40" y="716" width="10" height="10" rx="2" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text font-size="12" x="56" y="725" fill="#444441">Browser UI</text>
+<rect x="140" y="716" width="10" height="10" rx="2" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text font-size="12" x="156" y="725" fill="#444441">App logic / AI</text>
+<rect x="260" y="716" width="10" height="10" rx="2" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+<text font-size="12" x="276" y="725" fill="#444441">Background jobs</text>
+<rect x="390" y="716" width="10" height="10" rx="2" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text font-size="12" x="406" y="725" fill="#444441">Infrastructure</text>
+<rect x="510" y="716" width="10" height="10" rx="2" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text font-size="12" x="526" y="725" fill="#444441">Turkish compliance</text>
+
+</svg>

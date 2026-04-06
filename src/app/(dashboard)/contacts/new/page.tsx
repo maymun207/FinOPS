@@ -62,7 +62,7 @@ export default function NewContactPage() {
         </p>
       </div>
 
-      <ContactForm onSuccess={() => { router.push("/dashboard/contacts"); }} />
+      <ContactForm onSuccess={() => { router.push("/contacts"); }} />
     </div>
   );
 }

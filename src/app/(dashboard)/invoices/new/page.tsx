@@ -61,7 +61,7 @@ export default function NewInvoicePage() {
         </p>
       </div>
 
-      <InvoiceForm onSuccess={() => { router.push("/dashboard/ledger"); }} />
+      <InvoiceForm onSuccess={() => { router.push("/ledger"); }} />
     </div>
   );
 }

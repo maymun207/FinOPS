@@ -1,5 +1,5 @@
 import "server-only";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { companies } from "@/server/db/schema";
@@ -8,6 +8,8 @@ import { companies } from "@/server/db/schema";
  * tRPC context — created per request.
  *
  * Resolves the authenticated user's company from Clerk orgId → companies table.
+ * Auto-provisions a company row if orgId exists but no company is found.
+ *
  * Exposes:
  *   - db: Drizzle client
  *   - userId: Clerk user ID (null if unauthenticated)
@@ -22,13 +24,33 @@ export async function createTRPCContext(opts: { headers: Headers }) {
 
   // Resolve company from Clerk orgId if authenticated with an org
   if (orgId) {
-    const company = await db
+    const existing = await db
       .select({ id: companies.id })
       .from(companies)
       .where(eq(companies.clerkOrgId, orgId))
       .limit(1);
 
-    companyId = company[0]?.id ?? null;
+    if (existing[0]) {
+      companyId = existing[0].id;
+    } else {
+      // Auto-provision: create a company row for this Clerk org
+      try {
+        const clerk = await clerkClient();
+        const org = await clerk.organizations.getOrganization({ organizationId: orgId });
+        const inserted = await db
+          .insert(companies)
+          .values({
+            clerkOrgId: orgId,
+            name: org.name || "Yeni Şirket",
+          })
+          .returning({ id: companies.id });
+
+        companyId = inserted[0]?.id ?? null;
+        console.log(`✅ Auto-provisioned company for org ${orgId}: ${companyId}`);
+      } catch (err) {
+        console.error("❌ Failed to auto-provision company:", err);
+      }
+    }
   }
 
   return {
@@ -41,3 +63,4 @@ export async function createTRPCContext(opts: { headers: Headers }) {
 }
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
+
