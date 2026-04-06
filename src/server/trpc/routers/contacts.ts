@@ -58,7 +58,7 @@ export const contactsRouter = createTRPCRouter({
    * Verifies it belongs to the current company.
    */
   getById: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const row = await ctx.db
         .select()
@@ -87,7 +87,7 @@ export const contactsRouter = createTRPCRouter({
         name: z.string().min(1, "İsim zorunludur"),
         type: z.enum(["customer", "vendor", "both"]),
         taxId: z.string().optional(),
-        email: z.string().email().optional().or(z.literal("")),
+        email: z.email().optional().or(z.literal("")),
         phone: z.string().optional(),
         address: z.string().optional(),
       })
@@ -99,10 +99,10 @@ export const contactsRouter = createTRPCRouter({
           companyId: ctx.companyId,
           name: input.name,
           type: input.type,
-          taxId: input.taxId || null,
-          email: input.email || null,
-          phone: input.phone || null,
-          address: input.address || null,
+          taxId: input.taxId ?? null,
+          email: input.email ?? null,
+          phone: input.phone ?? null,
+          address: input.address ?? null,
         })
         .returning();
 
@@ -116,11 +116,11 @@ export const contactsRouter = createTRPCRouter({
   update: companyProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         name: z.string().min(1).optional(),
         type: z.enum(["customer", "vendor", "both"]).optional(),
         taxId: z.string().optional(),
-        email: z.string().email().optional().or(z.literal("")),
+        email: z.email().optional().or(z.literal("")),
         phone: z.string().optional(),
         address: z.string().optional(),
       })
@@ -156,7 +156,7 @@ export const contactsRouter = createTRPCRouter({
    * Hard delete — invoices referencing this contact will have contactId set to NULL.
    */
   delete: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db
         .select({ id: contacts.id })

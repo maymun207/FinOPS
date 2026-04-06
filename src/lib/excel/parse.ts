@@ -95,8 +95,8 @@ function getHeadersFromRange(ws: XLSX.WorkSheet): string[] {
 
   for (let col = range.s.c; col <= range.e.c; col++) {
     const addr = XLSX.utils.encode_cell({ r: 0, c: col });
-    const cell = ws[addr];
-    headers.push(cell?.v != null ? String(cell.v) : `Column ${col + 1}`);
+    const cell = ws[addr] as { v?: unknown } | undefined;
+    headers.push(cell?.v != null ? String(cell.v as string | number) : `Column ${String(col + 1)}`);
   }
 
   return headers;

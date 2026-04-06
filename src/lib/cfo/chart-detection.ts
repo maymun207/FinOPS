@@ -22,7 +22,7 @@ const DATE_PATTERNS =
   /^(date|tarih|period|donem|dönem|ay|month|year|yil|yıl|created_at|updated_at|invoice_date|fatura_tarihi|due_date|vade_tarihi)/i;
 
 // Common category/label column name patterns
-const CATEGORY_PATTERNS =
+const _CATEGORY_PATTERNS =
   /^(name|ad|isim|category|kategori|type|tip|tür|code|kod|account|hesap|contact|cari|description|açıklama|aciklama)/i;
 
 // Debit/credit pairs

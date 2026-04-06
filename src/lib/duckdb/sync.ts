@@ -95,7 +95,7 @@ async function syncTable(
       db,
       `SELECT COUNT(*)::INTEGER AS cnt FROM ${table};`
     );
-    const count = (rows[0] as { cnt: number })?.cnt ?? 0;
+    const count = (rows[0] as { cnt: number }).cnt;
 
     return {
       table,

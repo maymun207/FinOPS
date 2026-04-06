@@ -73,7 +73,7 @@ export const auditAnomalyDigestTask = schedules.task({
             type: "excessive_deletes",
             severity: "critical",
             count: deletes,
-            description: `Son 24 saatte ${deletes} DELETE işlemi tespit edildi (eşik: 50)`,
+            description: `Son 24 saatte ${String(deletes)} DELETE işlemi tespit edildi (eşik: 50)`,
           });
         }
 
@@ -92,7 +92,7 @@ export const auditAnomalyDigestTask = schedules.task({
             type: "after_hours",
             severity: "warning",
             count: afterHours,
-            description: `${afterHours} işlem mesai dışı saatlerde (23:00-06:00) yapıldı`,
+            description: `${String(afterHours)} işlem mesai dışı saatlerde (23:00-06:00) yapıldı`,
           });
         }
 
@@ -110,7 +110,7 @@ export const auditAnomalyDigestTask = schedules.task({
             type: "ai_errors",
             severity: "warning",
             count: aiErrorCount,
-            description: `${aiErrorCount} AI sorgu hatası tespit edildi`,
+            description: `${String(aiErrorCount)} AI sorgu hatası tespit edildi`,
           });
         }
 
@@ -128,7 +128,7 @@ export const auditAnomalyDigestTask = schedules.task({
             type: "gib_failures",
             severity: "critical",
             count: gibFailCount,
-            description: `${gibFailCount} e-Fatura GİB tarafından reddedildi`,
+            description: `${String(gibFailCount)} e-Fatura GİB tarafından reddedildi`,
           });
         }
 
@@ -192,7 +192,7 @@ export const auditAnomalyDigestTask = schedules.task({
             await resend.emails.send({
               from: "FinOPS Denetim <noreply@finops.dev>",
               to: adminEmail,
-              subject: `⚠️ Anomali Raporu: ${companyAnomalies.companyName} — ${companyAnomalies.anomalies.length} bulgu`,
+              subject: `⚠️ Anomali Raporu: ${companyAnomalies.companyName} — ${String(companyAnomalies.anomalies.length)} bulgu`,
               html,
             });
             emailsSent++;
@@ -243,7 +243,7 @@ function buildDigestEmail(data: CompanyAnomalies): string {
       <td style="padding:8px 12px;border-bottom:1px solid #333;color:#${a.severity === "critical" ? "ef4444" : "fbbf24"}">
         ${a.severity === "critical" ? "🔴" : "🟡"} ${a.type.replace(/_/g, " ").toUpperCase()}
       </td>
-      <td style="padding:8px 12px;border-bottom:1px solid #333;text-align:center;color:#e5e7eb">${a.count}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #333;text-align:center;color:#e5e7eb">${String(a.count)}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #333;color:#d1d5db">${a.description}</td>
     </tr>`,
     )

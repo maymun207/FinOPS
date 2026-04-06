@@ -69,7 +69,7 @@ export default function QuarantineReviewPage() {
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); }}
             style={{
               padding: "12px 24px",
               border: "none",

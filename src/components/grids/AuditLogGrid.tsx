@@ -10,7 +10,7 @@
  *
  * Admin-only component — no edit capabilities.
  */
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ValueFormatterParams } from "ag-grid-community";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
@@ -40,7 +40,7 @@ const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
   DELETE: { bg: "rgba(239, 68, 68, 0.1)", text: "#ef4444" },
 };
 
-interface AuditLogRow {
+interface _AuditLogRow {
   id: number;
   tableName: string;
   recordId: string;
@@ -192,7 +192,7 @@ export function AuditLogGrid() {
         <select
           value={tableFilter ?? ""}
           onChange={(e) =>
-            setTableFilter(e.target.value || undefined)
+            { setTableFilter(e.target.value || undefined); }
           }
           style={{
             padding: "0.375rem 0.75rem",
@@ -214,9 +214,9 @@ export function AuditLogGrid() {
         <select
           value={actionFilter ?? ""}
           onChange={(e) =>
-            setActionFilter(
-              (e.target.value as "INSERT" | "UPDATE" | "DELETE") || undefined
-            )
+            { setActionFilter(
+              (e.target.value || undefined) as "INSERT" | "UPDATE" | "DELETE" | undefined
+            ); }
           }
           style={{
             padding: "0.375rem 0.75rem",
@@ -258,7 +258,7 @@ export function AuditLogGrid() {
           loading={isLoading}
           localeText={TR_LOCALE}
           animateRows={true}
-          getRowId={(params) => String(params.data.id)}
+          getRowId={(params) => String((params.data as { id: number }).id)}
           /* Virtual scrolling for large row counts (10K+) */
           rowBuffer={20}
           suppressRowVirtualisation={false}

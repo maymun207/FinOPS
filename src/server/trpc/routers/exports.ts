@@ -15,7 +15,7 @@ import { journalEntries } from "../../db/schema/journal-entries";
 import { chartOfAccounts } from "../../db/schema/chart-of-accounts";
 import { contacts } from "../../db/schema/contacts";
 import { invoices } from "../../db/schema/invoices";
-import { eq, and, or, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   exportTransactions,
   exportContacts,
@@ -62,7 +62,7 @@ export const exportsRouter = createTRPCRouter({
 
     return {
       base64: buffer.toString("base64"),
-      filename: `hareketler_${new Date().toISOString().split("T")[0]}.xlsx`,
+      filename: `hareketler_${new Date().toISOString().split("T")[0] ?? "export"}.xlsx`,
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
@@ -89,7 +89,7 @@ export const exportsRouter = createTRPCRouter({
 
     return {
       base64: buffer.toString("base64"),
-      filename: `cariler_${new Date().toISOString().split("T")[0]}.xlsx`,
+      filename: `cariler_${new Date().toISOString().split("T")[0] ?? "export"}.xlsx`,
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
@@ -132,7 +132,7 @@ export const exportsRouter = createTRPCRouter({
 
     return {
       base64: buffer.toString("base64"),
-      filename: `faturalar_${new Date().toISOString().split("T")[0]}.xlsx`,
+      filename: `faturalar_${new Date().toISOString().split("T")[0] ?? "export"}.xlsx`,
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };

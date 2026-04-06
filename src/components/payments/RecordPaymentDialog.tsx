@@ -58,9 +58,9 @@ export function RecordPaymentDialog({
 
   const createMutation = trpc.payment.create.useMutation({
     onSuccess: () => {
-      utils.payment.list.invalidate();
-      utils.invoice.list.invalidate();
-      utils.dashboard.getKPIs.invalidate();
+      void utils.payment.list.invalidate();
+      void utils.invoice.list.invalidate();
+      void utils.dashboard.getKPIs.invalidate();
       resetForm();
       onSuccess?.();
       onClose();
@@ -92,7 +92,7 @@ export function RecordPaymentDialog({
   const parsedAmount = amount ? new Decimal(amount || "0") : new Decimal(0);
   const isValid = parsedAmount.gt(0) && paymentDate.length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!isValid) return;
     setError(null);
@@ -225,7 +225,7 @@ export function RecordPaymentDialog({
               step="0.01"
               min="0.01"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => { setAmount(e.target.value); }}
               placeholder={remaining.toFixed(2)}
               autoFocus
               style={{
@@ -258,7 +258,7 @@ export function RecordPaymentDialog({
               id="payment-date"
               type="date"
               value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
+              onChange={(e) => { setPaymentDate(e.target.value); }}
               style={{
                 width: "100%",
                 padding: "0.5rem 0.75rem",
@@ -289,7 +289,7 @@ export function RecordPaymentDialog({
               id="payment-method"
               value={method}
               onChange={(e) =>
-                setMethod(e.target.value as typeof method)
+                { setMethod(e.target.value as typeof method); }
               }
               style={{
                 width: "100%",
@@ -327,7 +327,7 @@ export function RecordPaymentDialog({
               id="payment-reference"
               type="text"
               value={reference}
-              onChange={(e) => setReference(e.target.value)}
+              onChange={(e) => { setReference(e.target.value); }}
               placeholder="Dekont no, çek no..."
               style={{
                 width: "100%",
@@ -358,7 +358,7 @@ export function RecordPaymentDialog({
             <textarea
               id="payment-notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => { setNotes(e.target.value); }}
               rows={2}
               style={{
                 width: "100%",

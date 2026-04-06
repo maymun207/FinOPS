@@ -141,7 +141,7 @@ export const cfoRouter = createTRPCRouter({
       );
 
       return {
-        queries: result.rows as Array<{
+        queries: result.rows as {
           id: number;
           query_text: string;
           response_text: string;
@@ -149,7 +149,7 @@ export const cfoRouter = createTRPCRouter({
           tokens_used: number | null;
           latency_ms: number | null;
           created_at: string;
-        }>,
+        }[],
       };
     }),
 });

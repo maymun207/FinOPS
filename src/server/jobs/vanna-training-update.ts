@@ -29,7 +29,7 @@ async function generateEmbedding(text: string, apiKey: string): Promise<number[]
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini embedding failed: ${response.status} ${await response.text()}`);
+    throw new Error(`Gemini embedding failed: ${String(response.status)} ${await response.text()}`);
   }
 
   const data = (await response.json()) as GeminiEmbeddingResponse;

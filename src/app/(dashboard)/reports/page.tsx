@@ -95,8 +95,8 @@ function ReportDownloadRow({
     >
       <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{title}</span>
       <div style={{ display: "flex", gap: 8 }}>
-        <DownloadButton label="Excel" icon="📊" onClick={() => handleDownload("xlsx")} variant="secondary" />
-        <DownloadButton label="PDF" icon="📄" onClick={() => handleDownload("pdf")} />
+        <DownloadButton label="Excel" icon="📊" onClick={() => { handleDownload("xlsx"); }} variant="secondary" />
+        <DownloadButton label="PDF" icon="📄" onClick={() => { handleDownload("pdf"); }} />
       </div>
     </div>
   );
@@ -205,26 +205,26 @@ export default function ReportsPage() {
         {/* Row 1: Trend + Cashflow */}
         <ChartCard title="Gelir / Gider Trendi">
           <RevenueExpenseTrend
-            data={(cashflow.data as Array<{
+            data={(cashflow.data as {
               year: number;
               month: number;
               cash_in: number;
               cash_out: number;
               net_flow: number;
-            }>) ?? []}
+            }[] | null) ?? []}
             height={350}
           />
         </ChartCard>
 
         <ChartCard title="Aylık Nakit Akışı">
           <CashFlowWaterfall
-            data={(cashflow.data as Array<{
+            data={(cashflow.data as {
               year: number;
               month: number;
               cash_in: number;
               cash_out: number;
               net_flow: number;
-            }>) ?? []}
+            }[] | null) ?? []}
             height={350}
           />
         </ChartCard>
@@ -232,7 +232,7 @@ export default function ReportsPage() {
         {/* Row 2: Aging + KDV */}
         <ChartCard title="Alacak Yaşlandırma">
           <ReceivablesAging
-            data={(aging.data as Array<{
+            data={(aging.data as {
               contact_id: string;
               contact_name: string | null;
               bucket_0_30: number;
@@ -240,20 +240,20 @@ export default function ReportsPage() {
               bucket_61_90: number;
               bucket_90_plus: number;
               total_receivable: number;
-            }>) ?? []}
+            }[] | null) ?? []}
             height={350}
           />
         </ChartCard>
 
         <ChartCard title="KDV Oranlarına Göre Dağılım">
           <KDVByRate
-            data={(kdv.data as Array<{
+            data={(kdv.data as {
               kdv_rate: number;
               invoice_count: number;
               total_subtotal: number;
               total_kdv: number;
               total_grand: number;
-            }>) ?? []}
+            }[] | null) ?? []}
             height={350}
           />
         </ChartCard>
@@ -263,12 +263,12 @@ export default function ReportsPage() {
           <ChartCard title="Gider Dağılımı (TDHP Grupları)">
             <ExpenseTreemap
               data={
-                ((income.data as Array<{
+                ((income.data as {
                   account_type: string;
                   account_code: string;
                   account_name: string | null;
                   net_amount: number;
-                }>) ?? []).filter((r) => r.account_type === "expense")
+                }[] | null) ?? []).filter((r) => r.account_type === "expense")
               }
               height={450}
             />

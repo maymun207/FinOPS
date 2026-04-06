@@ -167,7 +167,7 @@ export function ClosePeriodDialog({
             id="close-period-confirmation"
             type="text"
             value={typed}
-            onChange={(e) => setTyped(e.target.value)}
+            onChange={(e) => { setTyped(e.target.value); }}
             placeholder={periodName}
             autoFocus
             style={{

@@ -138,15 +138,15 @@ export const excelImportLargeTask = task({
       });
 
       // 3. Load column mapping
-      let mapping: Array<{ sourceCol: string; targetField: string }> = [];
+      let mapping: { sourceCol: string; targetField: string }[] = [];
 
       if (payload.mappingProfileId) {
         const { rows } = await pool.query(
           `SELECT mapping FROM column_mapping_profiles WHERE id = $1 LIMIT 1`,
           [payload.mappingProfileId]
         );
-        if (rows[0]?.mapping) {
-          mapping = rows[0].mapping as typeof mapping;
+        if ((rows[0] as Record<string, unknown>).mapping) {
+          mapping = (rows[0] as Record<string, unknown>).mapping as typeof mapping;
         }
       }
 
@@ -164,14 +164,14 @@ export const excelImportLargeTask = task({
       let invalidCount = 0;
 
       // Collect quarantine records for batch insert
-      const quarantineRecords: Array<{
+      const quarantineRecords: {
         companyId: string;
         source: string;
         rawData: Record<string, unknown>;
         status: string;
         errorMessage: string | null;
         mappingProfileId: string | null;
-      }> = [];
+      }[] = [];
 
       for (const row of sheet.rows) {
         // Apply column mapping
@@ -220,7 +220,7 @@ export const excelImportLargeTask = task({
         batch.forEach((rec, idx) => {
           const offset = idx * 6;
           placeholders.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}::jsonb, $${offset + 4}, $${offset + 5}, $${offset + 6})`
+            `($${String(offset + 1)}, $${String(offset + 2)}, $${String(offset + 3)}::jsonb, $${String(offset + 4)}, $${String(offset + 5)}, $${String(offset + 6)})`
           );
           values.push(
             rec.companyId,
@@ -238,7 +238,7 @@ export const excelImportLargeTask = task({
           values
         );
 
-        logger.info(`Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}`, {
+        logger.info(`Inserted batch ${String(Math.floor(i / BATCH_SIZE) + 1)}`, {
           count: batch.length,
         });
       }

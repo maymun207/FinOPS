@@ -60,7 +60,7 @@ export function parseTurkishNumber(raw: unknown, field?: string): Decimal {
     return new Decimal(raw);
   }
 
-  let str = String(raw).trim();
+  let str = typeof raw === 'string' ? raw.trim() : String(raw as string | number).trim();
 
   if (str === "") {
     throw new ParseError("Değer boş olamaz", raw, field);
@@ -161,7 +161,7 @@ export function parseTurkishNumber(raw: unknown, field?: string): Decimal {
 
   // ── Validate: only digits and at most one dot ────────────────
   if (!/^\d+(\.\d+)?$/.test(normalized)) {
-    throw new ParseError(`Geçersiz sayı formatı: "${String(raw)}"`, raw, field);
+    throw new ParseError(`Geçersiz sayı formatı: "${typeof raw === 'string' ? raw : String(raw as string | number)}"`, raw, field);
   }
 
   let result = new Decimal(normalized);

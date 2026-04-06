@@ -40,7 +40,7 @@ async function generateEmbedding(
 
   if (!response.ok) {
     throw new Error(
-      `Gemini embedding failed: ${response.status} ${await response.text()}`,
+      `Gemini embedding failed: ${String(response.status)} ${await response.text()}`,
     );
   }
 
@@ -69,7 +69,7 @@ async function seed() {
       "SELECT COUNT(*)::text as cnt FROM vanna_training",
     );
     const existingCount = parseInt(countRows[0]?.cnt ?? "0", 10);
-    console.log(`📊 Current vanna_training rows: ${existingCount}`);
+    console.log(`📊 Current vanna_training rows: ${String(existingCount)}`);
 
     if (existingCount >= 50) {
       console.log("✅ Already seeded (50+ rows). Skipping.");
@@ -102,14 +102,14 @@ async function seed() {
 
       try {
         console.log(
-          `  [${i + 1}/${TRAINING_CORPUS.length}] Embedding: "${pair.question.substring(0, 60)}..."`,
+          `  [${String(i + 1)}/${String(TRAINING_CORPUS.length)}] Embedding: "${pair.question.substring(0, 60)}..."`,
         );
 
         const embedding = await generateEmbedding(pair.question, apiKey);
 
         if (embedding.length !== 768) {
           console.error(
-            `  ⚠️  Unexpected dimension: ${embedding.length} (expected 768)`,
+            `  ⚠️  Unexpected dimension: ${String(embedding.length)} (expected 768)`,
           );
           continue;
         }
@@ -126,7 +126,7 @@ async function seed() {
         inserted++;
       } catch (err) {
         console.error(
-          `  ❌ Failed to seed pair "${pair.question}": ${err instanceof Error ? err.message : err}`,
+          `  ❌ Failed to seed pair "${pair.question}": ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -138,23 +138,23 @@ async function seed() {
     const finalCount = parseInt(finalRows[0]?.cnt ?? "0", 10);
 
     console.log(`\n✅ Seeding complete:`);
-    console.log(`   Inserted: ${inserted}`);
-    console.log(`   Skipped:  ${skipped}`);
-    console.log(`   Total:    ${finalCount}`);
+    console.log(`   Inserted: ${String(inserted)}`);
+    console.log(`   Skipped:  ${String(skipped)}`);
+    console.log(`   Total:    ${String(finalCount)}`);
 
     // Verify embedding dimension
     const { rows: dimRows } = await pool.query<{ dim: number }>(
       "SELECT vector_dims(embedding) as dim FROM vanna_training LIMIT 1",
     );
     if (dimRows[0]) {
-      console.log(`   Embedding dims: ${dimRows[0].dim}`);
+      console.log(`   Embedding dims: ${String(dimRows[0].dim)}`);
     }
   } finally {
     await pool.end();
   }
 }
 
-seed().catch((err) => {
+seed().catch((err: unknown) => {
   console.error("Seed failed:", err);
   process.exit(1);
 });

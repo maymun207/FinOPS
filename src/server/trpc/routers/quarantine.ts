@@ -61,7 +61,7 @@ export const quarantineRouter = createTRPCRouter({
    * Sets status='approved'. Actual promotion logic is separate.
    */
   approve: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [updated] = await ctx.db
         .update(importQuarantine)
@@ -86,7 +86,7 @@ export const quarantineRouter = createTRPCRouter({
   reject: companyProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         reason: z.string().min(1).max(500),
       })
     )
@@ -113,7 +113,7 @@ export const quarantineRouter = createTRPCRouter({
    * Bulk approve multiple quarantine records.
    */
   bulkApprove: companyProcedure
-    .input(z.object({ ids: z.array(z.string().uuid()).max(500) }))
+    .input(z.object({ ids: z.array(z.uuid()).max(500) }))
     .mutation(async ({ ctx, input }) => {
       if (input.ids.length === 0) return { updated: 0 };
 
@@ -140,7 +140,7 @@ export const quarantineRouter = createTRPCRouter({
   bulkReject: companyProcedure
     .input(
       z.object({
-        ids: z.array(z.string().uuid()).max(500),
+        ids: z.array(z.uuid()).max(500),
         reason: z.string().min(1).max(500),
       })
     )
@@ -172,7 +172,7 @@ export const quarantineRouter = createTRPCRouter({
   update: companyProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         rawData: z.record(z.string(), z.unknown()),
       })
     )

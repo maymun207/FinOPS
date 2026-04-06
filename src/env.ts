@@ -8,7 +8,7 @@ export const env = createEnv({
   server: {
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     SUPABASE_DB_URL: z.url(),
-    SUPABASE_DB_URL_UNPOOLED: z.string().url().optional(),
+    SUPABASE_DB_URL_UNPOOLED: z.url().optional(),
 
     CLERK_SECRET_KEY: z.string().min(1),
 

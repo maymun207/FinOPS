@@ -310,9 +310,9 @@ export function buildUBLInvoice(data: UBLInvoiceData): string {
  * @param sequence - sequence number (1-999999999)
  */
 export function generateInvoiceId(
-  series: string = "TST",
+  series = "TST",
   year: number = new Date().getFullYear(),
-  sequence: number = 1,
+  sequence = 1,
 ): string {
   const s = series.toUpperCase().padEnd(3, "X").slice(0, 3);
   const y = String(year).slice(-4);

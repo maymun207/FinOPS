@@ -38,7 +38,7 @@ function excelSerialToISO(serial: number, field?: string): string {
   if (serial < 1 || serial > 2958465) {
     // 2958465 = Dec 31, 9999
     throw new ParseError(
-      `Excel seri numarası aralık dışında: ${serial}`,
+      `Excel seri numarası aralık dışında: ${String(serial)}`,
       serial,
       field
     );
@@ -54,7 +54,7 @@ function excelSerialToISO(serial: number, field?: string): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
+  return `${String(year)}-${month}-${day}`;
 }
 
 // ── String date patterns ───────────────────────────────────────────
@@ -84,7 +84,7 @@ function isValidDate(year: number, month: number, day: number): boolean {
  * Format a date as ISO string (YYYY-MM-DD).
  */
 function toISO(year: number, month: number, day: number): string {
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return `${String(year)}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 /**
@@ -106,14 +106,14 @@ export function parseExcelDate(raw: unknown, field?: string): string {
     return excelSerialToISO(raw, field);
   }
 
-  const str = String(raw).trim();
+  const str = typeof raw === 'string' ? raw.trim() : String(raw as string | number).trim();
 
   if (str === "") {
     throw new ParseError("Tarih değeri boş olamaz", raw, field);
   }
 
   // ── Try ISO format first (YYYY-MM-DD) ────────────────────────
-  const isoMatch = str.match(ISO_REGEX);
+  const isoMatch = ISO_REGEX.exec(str);
   if (isoMatch) {
     const year = parseInt(isoMatch[1]!, 10);
     const month = parseInt(isoMatch[2]!, 10);
@@ -126,7 +126,7 @@ export function parseExcelDate(raw: unknown, field?: string): string {
   }
 
   // ── Try DD.MM.YYYY or DD/MM/YYYY ─────────────────────────────
-  const dmyMatch = str.match(DMY_REGEX);
+  const dmyMatch = DMY_REGEX.exec(str);
   if (dmyMatch) {
     const day = parseInt(dmyMatch[1]!, 10);
     const month = parseInt(dmyMatch[2]!, 10);

@@ -7,7 +7,7 @@
  */
 import { z } from "zod";
 import { parseTurkishNumber, parseExcelDate, ParseError } from "../parsers";
-import Decimal from "decimal.js";
+import _Decimal from "decimal.js";
 
 // ── Custom Zod transformers ────────────────────────────────────────
 
@@ -19,7 +19,7 @@ const turkishDecimal = z
       return parseTurkishNumber(val).toFixed(2);
     } catch (e) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: e instanceof ParseError ? e.message : "Geçersiz sayı",
       });
       return z.NEVER;
@@ -34,7 +34,7 @@ const excelDate = z
       return parseExcelDate(val);
     } catch (e) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: e instanceof ParseError ? e.message : "Geçersiz tarih",
       });
       return z.NEVER;
@@ -110,9 +110,9 @@ export type InvoiceImportRow = z.infer<typeof invoiceImportRowSchema>;
  */
 export function validateInvoiceImportBatch(
   rows: unknown[]
-): { valid: InvoiceImportRow[]; errors: Array<{ row: number; issues: string[] }> } {
+): { valid: InvoiceImportRow[]; errors: { row: number; issues: string[] }[] } {
   const valid: InvoiceImportRow[] = [];
-  const errors: Array<{ row: number; issues: string[] }> = [];
+  const errors: { row: number; issues: string[] }[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const result = invoiceImportRowSchema.safeParse(rows[i]);

@@ -48,7 +48,7 @@ export function GIBStatusBadge({ status, compact = false }: Props) {
   if (!status) return null;
 
   const config = STATUS_CONFIG[status];
-  if (!config) return null;
+  // config is always defined for valid status values
 
   if (compact) {
     return (

@@ -16,7 +16,7 @@ const turkishDecimal = z
       return parseTurkishNumber(val).toFixed(2);
     } catch (e) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: e instanceof ParseError ? e.message : "Geçersiz sayı",
       });
       return z.NEVER;
@@ -30,7 +30,7 @@ const excelDate = z
       return parseExcelDate(val);
     } catch (e) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: e instanceof ParseError ? e.message : "Geçersiz tarih",
       });
       return z.NEVER;
@@ -67,7 +67,7 @@ export const journalImportRowSchema = z.object({
     .string()
     .max(500)
     .optional()
-    .transform((val) => val?.trim() || undefined),
+    .transform((val) => val?.trim() ?? undefined),
 
   /** Source type — defaults to 'import' */
   sourceType: z
@@ -83,9 +83,9 @@ export type JournalImportRow = z.infer<typeof journalImportRowSchema>;
  */
 export function validateJournalImportBatch(
   rows: unknown[]
-): { valid: JournalImportRow[]; errors: Array<{ row: number; issues: string[] }> } {
+): { valid: JournalImportRow[]; errors: { row: number; issues: string[] }[] } {
   const valid: JournalImportRow[] = [];
-  const errors: Array<{ row: number; issues: string[] }> = [];
+  const errors: { row: number; issues: string[] }[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const result = journalImportRowSchema.safeParse(rows[i]);

@@ -30,14 +30,14 @@ export function FiscalPeriodManager() {
 
   const closeMutation = trpc.fiscalPeriod.closePeriod.useMutation({
     onSuccess: () => {
-      utils.fiscalPeriod.list.invalidate();
+      void utils.fiscalPeriod.list.invalidate();
       setCloseTarget(null);
     },
   });
 
   const openMutation = trpc.fiscalPeriod.openPeriod.useMutation({
     onSuccess: () => {
-      utils.fiscalPeriod.list.invalidate();
+      void utils.fiscalPeriod.list.invalidate();
     },
   });
 
@@ -54,7 +54,7 @@ export function FiscalPeriodManager() {
           gap: "0.75rem",
         }}
       >
-        {[...Array(3)].map((_, i) => (
+        {[...Array<undefined>(3)].map((_, i) => (
           <div
             key={i}
             style={{
@@ -173,7 +173,7 @@ export function FiscalPeriodManager() {
               {period.isClosed ? (
                 <button
                   type="button"
-                  onClick={() => openMutation.mutate({ periodId: period.id })}
+                  onClick={() => { openMutation.mutate({ periodId: period.id }); }}
                   disabled={openMutation.isPending}
                   style={{
                     padding: "0.375rem 0.875rem",
@@ -192,7 +192,7 @@ export function FiscalPeriodManager() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setCloseTarget(period)}
+                  onClick={() => { setCloseTarget(period); }}
                   style={{
                     padding: "0.375rem 0.875rem",
                     borderRadius: "0.375rem",
@@ -221,7 +221,7 @@ export function FiscalPeriodManager() {
         periodId={closeTarget?.id ?? ""}
         isLoading={closeMutation.isPending}
         onConfirm={handleCloseConfirm}
-        onCancel={() => setCloseTarget(null)}
+        onCancel={() => { setCloseTarget(null); }}
       />
     </>
   );

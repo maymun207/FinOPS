@@ -76,7 +76,7 @@ async function generateExcelBuffer(
     case "kdv_summary":
       return exportKdvBeyanReport(data as KdvBeyanRow[], companyName);
     default:
-      throw new Error(`Unknown report type: ${reportType}`);
+      throw new Error(`Unknown report type: ${String(reportType)}`);
   }
 }
 
@@ -129,7 +129,7 @@ export const reportGenerateTask = task({
           [payload.companyId, payload.reportType]
         );
 
-        if (cacheRows.length === 0 || !cacheRows[0]?.data) {
+        if (cacheRows.length === 0 || !(cacheRows[0] as Record<string, unknown> | undefined)?.data) {
           logger.warn("No cached data — run DuckDB sync first");
           return {
             reportType: payload.reportType,
@@ -148,7 +148,7 @@ export const reportGenerateTask = task({
 
         buffer = await generateExcelBuffer(
           payload.reportType,
-          cacheRows[0].data,
+          (cacheRows[0] as Record<string, unknown> | undefined)?.data,
           companyName ?? undefined
         );
 

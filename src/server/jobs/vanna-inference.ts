@@ -22,9 +22,9 @@ interface GeminiEmbeddingResponse {
 }
 
 interface GeminiGenerateResponse {
-  candidates: Array<{
-    content: { parts: Array<{ text: string }> };
-  }>;
+  candidates: {
+    content: { parts: { text: string }[] };
+  }[];
 }
 
 // ── Safety validation ──────────────────────────────────────────────
@@ -134,7 +134,7 @@ async function generateEmbedding(text: string, apiKey: string): Promise<number[]
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini embedding failed: ${response.status} ${await response.text()}`);
+    throw new Error(`Gemini embedding failed: ${String(response.status)} ${await response.text()}`);
   }
 
   const data = (await response.json()) as GeminiEmbeddingResponse;
@@ -162,14 +162,14 @@ async function generateSQL(
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini generation failed: ${response.status} ${await response.text()}`);
+    throw new Error(`Gemini generation failed: ${String(response.status)} ${await response.text()}`);
   }
 
   const data = (await response.json()) as GeminiGenerateResponse;
   const rawText = data.candidates[0]?.content.parts[0]?.text ?? "";
 
   // Extract SQL from markdown code blocks if present
-  const codeBlockMatch = rawText.match(/```(?:sql)?\s*([\s\S]*?)```/);
+  const codeBlockMatch = /```(?:sql)?\s*([\s\S]*?)```/.exec(rawText);
   return (codeBlockMatch?.[1] ?? rawText).trim();
 }
 

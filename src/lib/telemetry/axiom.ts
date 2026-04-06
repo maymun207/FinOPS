@@ -89,7 +89,7 @@ export async function log(entry: Omit<FinOpsLog, "timestamp"> & { timestamp?: st
     if (logEntry.level === "error") {
       console.error(prefix, logEntry.operation, logEntry.error, logEntry.metadata);
     } else {
-      console.log(prefix, logEntry.operation, logEntry.duration_ms ? `${logEntry.duration_ms}ms` : "", logEntry.metadata ?? "");
+      console.log(prefix, logEntry.operation, logEntry.duration_ms ? `${String(logEntry.duration_ms)}ms` : "", logEntry.metadata ?? "");
     }
   }
 

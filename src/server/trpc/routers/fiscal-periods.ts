@@ -62,7 +62,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
   closePeriod: companyProcedure
     .input(
       z.object({
-        periodId: z.string().uuid(),
+        periodId: z.uuid(),
         /** Must exactly match the period's name (e.g., "2024-03") */
         confirmation: z.string().min(1, "Onay metni zorunludur"),
       })
@@ -123,7 +123,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
    * Resets is_closed, closed_at, and closed_by.
    */
   openPeriod: companyProcedure
-    .input(z.object({ periodId: z.string().uuid() }))
+    .input(z.object({ periodId: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db
         .select()

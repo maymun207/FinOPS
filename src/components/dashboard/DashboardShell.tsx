@@ -9,7 +9,7 @@
  *   - Slot for additional content below
  */
 import React from "react";
-import { KPICard, computeDeltaPercent } from "./KPICard";
+import { KPICard } from "./KPICard";
 
 export interface DashboardKPIs {
   revenue: string;
@@ -143,7 +143,7 @@ export function DashboardShell({ kpis, isLoading, children }: DashboardShellProp
             gap: "1rem",
           }}
         >
-          {[...Array(5)].map((_, i) => (
+          {[...Array<undefined>(5)].map((_, i) => (
             <div
               key={i}
               style={{
@@ -168,13 +168,13 @@ export function DashboardShell({ kpis, isLoading, children }: DashboardShellProp
             title="Gelir"
             value={kpis.revenue}
             icon="📈"
-            deltaLabel={`${kpis.revenueCount} fatura`}
+            deltaLabel={`${String(kpis.revenueCount)} fatura`}
           />
           <KPICard
             title="Gider"
             value={kpis.expenses}
             icon="📉"
-            deltaLabel={`${kpis.expenseCount} fatura`}
+            deltaLabel={`${String(kpis.expenseCount)} fatura`}
           />
           <KPICard
             title="Net Kâr/Zarar"

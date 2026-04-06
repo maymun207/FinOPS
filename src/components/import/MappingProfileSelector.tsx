@@ -20,8 +20,8 @@ interface MappingProfile {
 
 interface MappingProfileSelectorProps {
   fingerprint: string | null;
-  onProfileLoad: (mapping: Array<{ sourceCol: string; targetField: string }>) => void;
-  currentMapping: Array<{ sourceCol: string; targetField: string }>;
+  onProfileLoad: (mapping: { sourceCol: string; targetField: string }[]) => void;
+  currentMapping: { sourceCol: string; targetField: string }[];
 }
 
 export function MappingProfileSelector({
@@ -46,7 +46,7 @@ export function MappingProfileSelector({
     onSuccess: () => {
       setShowSave(false);
       setProfileName("");
-      profilesQuery.refetch();
+      void profilesQuery.refetch();
     },
   });
 
@@ -60,10 +60,10 @@ export function MappingProfileSelector({
   };
 
   const handleLoadProfile = (profile: MappingProfile) => {
-    const mapping = profile.mapping as Array<{
+    const mapping = profile.mapping as {
       sourceCol: string;
       targetField: string;
-    }>;
+    }[];
     if (Array.isArray(mapping)) {
       onProfileLoad(mapping);
     }
@@ -97,7 +97,7 @@ export function MappingProfileSelector({
             Eşleşen profil: <strong>{matchQuery.data.name}</strong>
           </span>
           <button
-            onClick={() => handleLoadProfile(matchQuery.data!)}
+            onClick={() => { handleLoadProfile(matchQuery.data!); }}
             style={{
               padding: "4px 12px",
               borderRadius: "6px",
@@ -117,7 +117,7 @@ export function MappingProfileSelector({
       {profilesQuery.data && profilesQuery.data.length > 0 && (
         <select
           onChange={(e) => {
-            const profile = profilesQuery.data?.find(
+            const profile = profilesQuery.data.find(
               (p) => p.id === e.target.value
             );
             if (profile) handleLoadProfile(profile as unknown as MappingProfile);
@@ -146,7 +146,7 @@ export function MappingProfileSelector({
       {/* Save button */}
       {!showSave ? (
         <button
-          onClick={() => setShowSave(true)}
+          onClick={() => { setShowSave(true); }}
           style={{
             padding: "8px 16px",
             borderRadius: "8px",
@@ -165,7 +165,7 @@ export function MappingProfileSelector({
           <input
             type="text"
             value={profileName}
-            onChange={(e) => setProfileName(e.target.value)}
+            onChange={(e) => { setProfileName(e.target.value); }}
             placeholder="Profil adı..."
             style={{
               padding: "8px 12px",
@@ -194,7 +194,7 @@ export function MappingProfileSelector({
             {saveMutation.isPending ? "Kaydediliyor..." : "Kaydet"}
           </button>
           <button
-            onClick={() => setShowSave(false)}
+            onClick={() => { setShowSave(false); }}
             style={{
               background: "none",
               border: "none",

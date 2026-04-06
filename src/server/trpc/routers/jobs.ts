@@ -23,7 +23,7 @@ export const jobsRouter = createTRPCRouter({
       z.object({
         r2Key: z.string().min(1),
         importType: z.enum(["invoice", "contact", "journal"]),
-        mappingProfileId: z.string().uuid().optional(),
+        mappingProfileId: z.uuid().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -47,7 +47,7 @@ export const jobsRouter = createTRPCRouter({
     .input(
       z.object({
         reportType: z.enum(["trial_balance", "balance_sheet", "income_statement", "kdv_summary"]),
-        fiscalPeriodId: z.string().uuid(),
+        fiscalPeriodId: z.uuid(),
         format: z.enum(["pdf", "xlsx"]).default("pdf"),
       })
     )
@@ -77,7 +77,7 @@ export const jobsRouter = createTRPCRouter({
         return {
           id: run.id,
           status: run.status,
-          output: run.output ?? null,
+          output: run.output ?? null, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
           createdAt: run.createdAt,
           updatedAt: run.updatedAt,
           finishedAt: run.finishedAt ?? null,

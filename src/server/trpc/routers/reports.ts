@@ -40,7 +40,7 @@ async function readCachedReport<T>(
         LIMIT 1`
   );
 
-  const rows = result.rows as Array<{ data: T }>;
+  const rows = result.rows as { data: T }[];
   if (rows.length === 0) return null;
   return rows[0]!.data;
 }
@@ -71,7 +71,7 @@ export const reportsRouter = createTRPCRouter({
   }),
 
   contactLedger: companyProcedure
-    .input(z.object({ contactId: z.string().uuid().optional() }).optional())
+    .input(z.object({ contactId: z.uuid().optional() }).optional())
     .query(async ({ ctx }) => {
       return readCachedReport(ctx.companyId, "contact_ledger");
     }),

@@ -14,7 +14,7 @@ import React, { useCallback, useState, useRef } from "react";
 
 const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024; // 4MB
 
-const ACCEPTED_TYPES = [
+const _ACCEPTED_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
   "application/vnd.ms-excel", // .xls
   "text/csv", // .csv
@@ -52,7 +52,7 @@ export function FileUploader({
       // Validate size
       const maxBytes = maxSizeMB * 1024 * 1024;
       if (file.size > maxBytes) {
-        setError(`Dosya boyutu çok büyük (max ${maxSizeMB}MB).`);
+        setError(`Dosya boyutu çok büyük (max ${String(maxSizeMB)}MB).`);
         return;
       }
 
@@ -96,7 +96,7 @@ export function FileUploader({
   );
 
   const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024) return `${String(bytes)} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };

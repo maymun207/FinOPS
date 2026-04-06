@@ -12,7 +12,8 @@
  */
 import { log, type FinOpsLog } from "@/lib/telemetry/axiom";
 import { withSpan } from "@/lib/telemetry/otel";
-import { experimental_standaloneMiddleware } from "@trpc/server";
+import { // eslint-disable-next-line @typescript-eslint/no-deprecated
+experimental_standaloneMiddleware } from "@trpc/server";
 import { type TRPCContext } from "../trpc";
 
 /**
@@ -21,6 +22,7 @@ import { type TRPCContext } from "../trpc";
  * Logs every procedure call (input schema only, never values)
  * with timing, user context, and error information.
  */
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 export const loggingMiddleware = experimental_standaloneMiddleware<{
   ctx: TRPCContext;
 }>().create(async ({ ctx, next, path, type }) => {

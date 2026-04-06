@@ -58,7 +58,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
-  const [form, setForm] = useState<ContactFormData>({
+  const [form, setForm] = useState({
     name: initialData?.name ?? "",
     type: initialData?.type ?? "customer",
     taxId: initialData?.taxId ?? "",
@@ -72,23 +72,23 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
 
   const createMutation = trpc.contact.create.useMutation({
     onSuccess: () => {
-      utils.contact.list.invalidate();
+      void utils.contact.list.invalidate();
       onSuccess?.();
     },
-    onError: (err) => setError(err.message),
+    onError: (err) => { setError(err.message); },
   });
 
   const updateMutation = trpc.contact.update.useMutation({
     onSuccess: () => {
-      utils.contact.list.invalidate();
+      void utils.contact.list.invalidate();
       onSuccess?.();
     },
-    onError: (err) => setError(err.message),
+    onError: (err) => { setError(err.message); },
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -146,7 +146,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
           id="contact-name"
           type="text"
           value={form.name}
-          onChange={(e) => handleChange("name", e.target.value)}
+          onChange={(e) => { handleChange("name", e.target.value); }}
           style={inputStyle}
           placeholder="Örn: ABC Ltd. Şti."
           required
@@ -162,7 +162,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
           id="contact-type"
           value={form.type}
           onChange={(e) =>
-            handleChange("type", e.target.value as ContactFormData["type"])
+            { handleChange("type", e.target.value as ContactFormData["type"]); }
           }
           style={inputStyle}
         >
@@ -184,7 +184,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
             id="contact-tax-id"
             type="text"
             value={form.taxId}
-            onChange={(e) => handleChange("taxId", e.target.value)}
+            onChange={(e) => { handleChange("taxId", e.target.value); }}
             style={inputStyle}
             placeholder="Vergi Kimlik No"
           />
@@ -197,7 +197,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
             id="contact-email"
             type="email"
             value={form.email}
-            onChange={(e) => handleChange("email", e.target.value)}
+            onChange={(e) => { handleChange("email", e.target.value); }}
             style={inputStyle}
             placeholder="info@firma.com"
           />
@@ -213,7 +213,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
           id="contact-phone"
           type="tel"
           value={form.phone}
-          onChange={(e) => handleChange("phone", e.target.value)}
+          onChange={(e) => { handleChange("phone", e.target.value); }}
           style={inputStyle}
           placeholder="+90 212 000 00 00"
         />
@@ -227,7 +227,7 @@ export function ContactForm({ initialData, onSuccess }: ContactFormProps) {
         <textarea
           id="contact-address"
           value={form.address}
-          onChange={(e) => handleChange("address", e.target.value)}
+          onChange={(e) => { handleChange("address", e.target.value); }}
           style={{
             ...inputStyle,
             minHeight: "80px",

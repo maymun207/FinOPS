@@ -87,7 +87,7 @@ export const invoicesRouter = createTRPCRouter({
    * Get a single invoice by ID with all line items.
    */
   getById: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const invoice = await ctx.db
         .select({
@@ -157,7 +157,7 @@ export const invoicesRouter = createTRPCRouter({
         invoiceDate: z.string().min(1, "Fatura tarihi zorunludur"),
         dueDate: z.string().optional(),
         direction: z.enum(["inbound", "outbound"]),
-        contactId: z.string().uuid().optional(),
+        contactId: z.uuid().optional(),
         notes: z.string().optional(),
         lines: z
           .array(
@@ -293,7 +293,7 @@ export const invoicesRouter = createTRPCRouter({
    * Runs in a single transaction.
    */
   delete: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db
         .select({ id: invoices.id })

@@ -24,7 +24,7 @@ export default function NewInvoicePage() {
       {/* Page header */}
       <div>
         <button
-          onClick={() => router.back()}
+          onClick={() => { router.back(); }}
           style={{
             background: "none",
             border: "none",
@@ -61,7 +61,7 @@ export default function NewInvoicePage() {
         </p>
       </div>
 
-      <InvoiceForm onSuccess={() => router.push("/dashboard/ledger")} />
+      <InvoiceForm onSuccess={() => { router.push("/dashboard/ledger"); }} />
     </div>
   );
 }

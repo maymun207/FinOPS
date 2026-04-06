@@ -61,9 +61,9 @@ export const duckdbNightlySync = schedules.task({
 
       for (const r of results) {
         if (r.status === "ok") {
-          logger.info(`Synced ${r.table}: ${r.rows} rows (${r.durationMs}ms)`);
+          logger.info(`Synced ${r.table}: ${String(r.rows)} rows (${String(r.durationMs)}ms)`);
         } else {
-          logger.error(`Failed to sync ${r.table}: ${r.error}`);
+          logger.error(`Failed to sync ${r.table}: ${r.error ?? "unknown"}`);
         }
       }
 
@@ -87,13 +87,13 @@ export const duckdbNightlySync = schedules.task({
         "SELECT DISTINCT company_id FROM journal_entry_lines WHERE company_id IS NOT NULL;"
       );
 
-      const companyIds = (companies as Array<{ company_id: string }>).map(
+      const companyIds = (companies as { company_id: string }[]).map(
         (c) => c.company_id
       );
 
-      logger.info(`Caching view results for ${companyIds.length} companies`);
+      logger.info(`Caching view results for ${String(companyIds.length)} companies`);
 
-      const viewQueries: Array<{ name: string; query: string }> = [
+      const viewQueries: { name: string; query: string }[] = [
         { name: "trial_balance", query: "SELECT * FROM v_trial_balance" },
         { name: "income_statement", query: "SELECT * FROM v_income_statement" },
         { name: "balance_sheet", query: "SELECT * FROM v_balance_sheet" },

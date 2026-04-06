@@ -36,7 +36,7 @@ export const paymentsRouter = createTRPCRouter({
     .input(
       z
         .object({
-          invoiceId: z.string().uuid().optional(),
+          invoiceId: z.uuid().optional(),
           limit: z.number().min(1).max(1000).default(100),
           offset: z.number().min(0).default(0),
         })
@@ -66,7 +66,7 @@ export const paymentsRouter = createTRPCRouter({
   create: companyProcedure
     .input(
       z.object({
-        invoiceId: z.string().uuid(),
+        invoiceId: z.uuid(),
         amount: z.string().min(1, "Tutar zorunludur"),
         paymentDate: z.string().min(1, "Ödeme tarihi zorunludur"),
         method: z.enum(["bank_transfer", "cash", "credit_card", "check"]),

@@ -38,7 +38,7 @@ export const billingReminderDaily = schedules.task({
 
     try {
       const today = new Date();
-      const todayStr = today.toISOString().split("T")[0]!;
+      const _todayStr = today.toISOString().split("T")[0]!;
 
       // 7 days from now
       const nextWeek = new Date(today);
@@ -58,7 +58,7 @@ export const billingReminderDaily = schedules.task({
         [nextWeekStr]
       );
 
-      logger.info(`Found ${reminderInvoices.length} invoices due within 7 days or overdue`);
+      logger.info(`Found ${String(reminderInvoices.length)} invoices due within 7 days or overdue`);
 
       // Process each invoice — never throw on individual failures
       let remindersSent = 0;

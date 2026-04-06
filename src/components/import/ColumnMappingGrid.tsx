@@ -109,7 +109,7 @@ export function ColumnMappingGrid({
         },
         valueFormatter: (params: { value: string }) => {
           const field = targetFields.find((f) => f.value === params.value);
-          return field?.label ?? params.value ?? "— Eşleştirme Yok —";
+          return field?.label ?? params.value;
         },
       },
     ],

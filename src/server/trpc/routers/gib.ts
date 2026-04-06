@@ -18,7 +18,7 @@ export const gibRouter = createTRPCRouter({
    * Triggers the durable submission job via Trigger.dev.
    */
   submit: companyProcedure
-    .input(z.object({ invoiceId: z.string().uuid() }))
+    .input(z.object({ invoiceId: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       // Verify invoice exists and belongs to the company
       const [invoice] = await ctx.db
@@ -65,7 +65,7 @@ export const gibRouter = createTRPCRouter({
    * Get the current GIB status of an invoice.
    */
   status: companyProcedure
-    .input(z.object({ invoiceId: z.string().uuid() }))
+    .input(z.object({ invoiceId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       const [invoice] = await ctx.db
         .select({
@@ -99,7 +99,7 @@ export const gibRouter = createTRPCRouter({
    * Only works if the invoice's gib_status is 'rejected'.
    */
   retry: companyProcedure
-    .input(z.object({ invoiceId: z.string().uuid() }))
+    .input(z.object({ invoiceId: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [invoice] = await ctx.db
         .select({

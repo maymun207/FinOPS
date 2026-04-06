@@ -32,7 +32,7 @@ export const contactImportRowSchema = z.object({
   taxId: z
     .string()
     .optional()
-    .transform((val) => val?.trim() || undefined)
+    .transform((val) => val?.trim() ?? undefined)
     .pipe(
       z
         .string()
@@ -42,7 +42,6 @@ export const contactImportRowSchema = z.object({
 
   /** Email — optional, must be valid if provided */
   email: z
-    .string()
     .email("Geçersiz e-posta adresi")
     .max(255)
     .optional()
@@ -54,13 +53,13 @@ export const contactImportRowSchema = z.object({
     .string()
     .max(50, "Telefon numarası çok uzun")
     .optional()
-    .transform((val) => val?.trim() || undefined),
+    .transform((val) => val?.trim() ?? undefined),
 
   /** Address — optional free text */
   address: z
     .string()
     .optional()
-    .transform((val) => val?.trim() || undefined),
+    .transform((val) => val?.trim() ?? undefined),
 });
 
 export type ContactImportRow = z.infer<typeof contactImportRowSchema>;
@@ -70,9 +69,9 @@ export type ContactImportRow = z.infer<typeof contactImportRowSchema>;
  */
 export function validateContactImportBatch(
   rows: unknown[]
-): { valid: ContactImportRow[]; errors: Array<{ row: number; issues: string[] }> } {
+): { valid: ContactImportRow[]; errors: { row: number; issues: string[] }[] } {
   const valid: ContactImportRow[] = [];
-  const errors: Array<{ row: number; issues: string[] }> = [];
+  const errors: { row: number; issues: string[] }[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const result = contactImportRowSchema.safeParse(rows[i]);

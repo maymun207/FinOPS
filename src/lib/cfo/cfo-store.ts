@@ -77,24 +77,24 @@ export const useCFOStore = create<CFOStore>((set, get) => ({
   state: { phase: "IDLE" } as CFOState,
 
   ask: (runId, question) =>
-    set({ state: { phase: "GENERATING", runId, question } }),
+    { set({ state: { phase: "GENERATING", runId, question } }); },
 
   inferenceDone: (data) =>
-    set({
+    { set({
       state: {
         phase: "AWAITING_CONFIRMATION",
         ...data,
       },
-    }),
+    }); },
 
   inferenceRejected: (question, reason) =>
-    set({
+    { set({
       state: {
         phase: "ERROR",
         message: `SQL güvenlik kontrolünden geçemedi: ${reason}`,
         question,
       },
-    }),
+    }); },
 
   confirm: () => {
     const current = get().state;
@@ -112,10 +112,10 @@ export const useCFOStore = create<CFOStore>((set, get) => ({
     });
   },
 
-  cancel: () => set({ state: { phase: "IDLE" } }),
+  cancel: () => { set({ state: { phase: "IDLE" } }); },
 
   error: (message, question) =>
-    set({ state: { phase: "ERROR", message, question } }),
+    { set({ state: { phase: "ERROR", message, question } }); },
 
-  reset: () => set({ state: { phase: "IDLE" } }),
+  reset: () => { set({ state: { phase: "IDLE" } }); },
 }));

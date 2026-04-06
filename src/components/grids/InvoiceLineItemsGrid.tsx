@@ -122,7 +122,7 @@ export function InvoiceLineItemsGrid({
         cellClass: "ag-right-aligned-cell",
         headerClass: "ag-right-aligned-header",
         type: "rightAligned",
-        valueFormatter: (p) => `%${p.value}`,
+        valueFormatter: (p) => `%${String(p.value)}`,
       },
       {
         headerName: "Tutar",
@@ -164,7 +164,7 @@ export function InvoiceLineItemsGrid({
 
   const handleCellValueChanged = useCallback(
     (event: CellValueChangedEvent<InvoiceLineRow>) => {
-      if (!event.data) return;
+      // event.data is always defined for CellValueChanged
 
       const editableFields = ["quantity", "unitPrice", "kdvRate"];
       const field = event.colDef.field;
@@ -179,7 +179,7 @@ export function InvoiceLineItemsGrid({
       } else if (field === "description") {
         // Just propagate the description change
         const newRows = rows.map((r) =>
-          r.rowId === event.data!.rowId ? { ...event.data! } : r
+          r.rowId === event.data.rowId ? { ...event.data } : r
         );
         onChange(newRows);
       }

@@ -28,7 +28,7 @@ export const importRouter = createTRPCRouter({
       z.object({
         importType: z.enum(["invoice", "contact", "journal"]),
         rows: z.array(z.record(z.string(), z.unknown())),
-        mappingProfileId: z.string().uuid().optional(),
+        mappingProfileId: z.uuid().optional(),
         source: z.string().max(50).default("excel"),
       })
     )

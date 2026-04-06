@@ -61,31 +61,31 @@ export function QuarantineReviewGrid({
 
   // Mutations
   const approveMutation = trpc.quarantine.approve.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { void refetch(); },
   });
   const rejectMutation = trpc.quarantine.reject.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { void refetch(); },
   });
   const bulkApproveMutation = trpc.quarantine.bulkApprove.useMutation({
     onSuccess: () => {
       setSelectedIds([]);
-      refetch();
+      void refetch();
     },
   });
   const bulkRejectMutation = trpc.quarantine.bulkReject.useMutation({
     onSuccess: () => {
       setSelectedIds([]);
       setShowRejectDialog(false);
-      refetch();
+      void refetch();
     },
   });
   const updateMutation = trpc.quarantine.update.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { void refetch(); },
   });
 
   // Dynamically build columns from rawData keys
   const columnDefs = useMemo<ColDef<QuarantineRecord>[]>(() => {
-    const firstRow = data?.rows?.[0];
+    const firstRow = data?.rows[0];
     const rawDataKeys = firstRow?.rawData
       ? Object.keys(firstRow.rawData as Record<string, unknown>)
       : [];
@@ -93,7 +93,7 @@ export function QuarantineReviewGrid({
     const dynamicCols: ColDef<QuarantineRecord>[] = rawDataKeys.map((key) => ({
       headerName: key,
       valueGetter: (params: { data?: QuarantineRecord }) => {
-        const rd = params.data?.rawData as Record<string, unknown> | undefined;
+        const rd = params.data?.rawData;
         return rd?.[key] ?? "";
       },
       valueSetter: (params: {
@@ -101,7 +101,7 @@ export function QuarantineReviewGrid({
         newValue: unknown;
         colDef: ColDef;
       }) => {
-        const rd = { ...(params.data.rawData as Record<string, unknown>) };
+        const rd = { ...(params.data.rawData) };
         rd[key] = params.newValue;
         params.data.rawData = rd;
         // Trigger server update
@@ -131,9 +131,9 @@ export function QuarantineReviewGrid({
             border-radius:9999px;
             font-size:12px;
             font-weight:600;
-            background:${style!.bg};
-            color:${style!.color};
-          ">${style!.label}</span>`;
+            background:${style.bg};
+            color:${style.color};
+          ">${style.label}</span>`;
         },
       },
       // Dynamic rawData columns
@@ -155,7 +155,7 @@ export function QuarantineReviewGrid({
               editable: false as const,
               pinned: "right" as const,
               cellRenderer: (params: { data: QuarantineRecord }) => {
-                if (!params.data) return "";
+                // params.data is always defined in cellRenderer
                 return `<div style="display:flex;gap:6px;padding-top:4px">
                   <button
                     data-action="approve"
@@ -232,7 +232,7 @@ export function QuarantineReviewGrid({
           </span>
 
           <button
-            onClick={() => bulkApproveMutation.mutate({ ids: selectedIds })}
+            onClick={() => { bulkApproveMutation.mutate({ ids: selectedIds }); }}
             disabled={bulkApproveMutation.isPending}
             style={{
               padding: "6px 16px",
@@ -248,7 +248,7 @@ export function QuarantineReviewGrid({
           </button>
 
           <button
-            onClick={() => setShowRejectDialog(true)}
+            onClick={() => { setShowRejectDialog(true); }}
             style={{
               padding: "6px 16px",
               borderRadius: "6px",
@@ -281,7 +281,7 @@ export function QuarantineReviewGrid({
           <input
             type="text"
             value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
+            onChange={(e) => { setRejectReason(e.target.value); }}
             placeholder="Red nedeni..."
             style={{
               flex: 1,

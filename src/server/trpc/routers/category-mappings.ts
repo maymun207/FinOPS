@@ -41,7 +41,7 @@ export const categoryMappingsRouter = createTRPCRouter({
     .input(
       z.object({
         categoryLabel: z.string().min(1, "Kategori adı zorunludur"),
-        accountId: z.string().uuid("Geçerli bir hesap seçmelisiniz"),
+        accountId: z.uuid("Geçerli bir hesap seçmelisiniz"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -63,9 +63,9 @@ export const categoryMappingsRouter = createTRPCRouter({
   update: companyProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         categoryLabel: z.string().min(1).optional(),
-        accountId: z.string().uuid().optional(),
+        accountId: z.uuid().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -102,7 +102,7 @@ export const categoryMappingsRouter = createTRPCRouter({
    * Delete a category mapping.
    */
   delete: companyProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.db
         .select({ id: categoryMappings.id })

@@ -14,9 +14,7 @@ let _db: duckdb.Database | null = null;
  * For tests: uses :memory:.
  */
 export function getDuckDB(path?: string): duckdb.Database {
-  if (!_db) {
-    _db = new duckdb.Database(path ?? ":memory:");
-  }
+  _db ??= new duckdb.Database(path ?? ":memory:");
   return _db;
 }
 

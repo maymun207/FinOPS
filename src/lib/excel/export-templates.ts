@@ -81,7 +81,7 @@ function styleHeaderRow(ws: ExcelJS.Worksheet, rowNum: number): void {
 function addTotalsRow(
   ws: ExcelJS.Worksheet,
   values: (string | number)[],
-  label: string
+  _label: string
 ): ExcelJS.Row {
   const row = ws.addRow(values);
   row.font = { bold: true, size: 11 };
@@ -193,13 +193,13 @@ export async function exportMizanReport(
   }
 
   // Totals
-  const totalOpenDebit = rows.reduce((s, r) => s + Number(r.opening_debit), 0);
-  const totalOpenCredit = rows.reduce((s, r) => s + Number(r.opening_credit), 0);
-  const totalPeriodDebit = rows.reduce((s, r) => s + Number(r.period_debit), 0);
-  const totalPeriodCredit = rows.reduce((s, r) => s + Number(r.period_credit), 0);
-  const totalCloseDebit = rows.reduce((s, r) => s + Number(r.closing_debit), 0);
-  const totalCloseCredit = rows.reduce((s, r) => s + Number(r.closing_credit), 0);
-  const totalNet = rows.reduce((s, r) => s + Number(r.net_balance), 0);
+  const totalOpenDebit = rows.reduce((s, r) => s + r.opening_debit, 0);
+  const totalOpenCredit = rows.reduce((s, r) => s + r.opening_credit, 0);
+  const totalPeriodDebit = rows.reduce((s, r) => s + r.period_debit, 0);
+  const totalPeriodCredit = rows.reduce((s, r) => s + r.period_credit, 0);
+  const totalCloseDebit = rows.reduce((s, r) => s + r.closing_debit, 0);
+  const totalCloseCredit = rows.reduce((s, r) => s + r.closing_credit, 0);
+  const totalNet = rows.reduce((s, r) => s + r.net_balance, 0);
 
   addTotalsRow(ws, [
     "TOPLAM", "",
@@ -210,7 +210,7 @@ export async function exportMizanReport(
   ], "TOPLAM");
 
   // Freeze panes
-  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${headerRow.number + 1}`, activeCell: `A${headerRow.number + 1}` }];
+  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${String(headerRow.number + 1)}`, activeCell: `A${String(headerRow.number + 1)}` }];
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -275,13 +275,13 @@ export async function exportBilancoReport(
     }
 
     // Section subtotal
-    const subtotal = groupRows.reduce((s, r) => s + Number(r.balance), 0);
+    const subtotal = groupRows.reduce((s, r) => s + r.balance, 0);
     addTotalsRow(ws, [
       `${typeLabels[type] ?? type} Toplamı`, "", "", subtotal,
     ], "subtotal");
   }
 
-  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${headerRow.number + 1}`, activeCell: `A${headerRow.number + 1}` }];
+  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${String(headerRow.number + 1)}`, activeCell: `A${String(headerRow.number + 1)}` }];
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -325,7 +325,7 @@ export async function exportGelirTablosuReport(
       const dataRow = ws.addRow(["", r.account_code, r.account_name ?? "", r.net_amount]);
       dataRow.getCell(4).numFmt = CURRENCY_FORMAT;
     }
-    const totalRevenue = revenueRows.reduce((s, r) => s + Number(r.net_amount), 0);
+    const totalRevenue = revenueRows.reduce((s, r) => s + r.net_amount, 0);
     addTotalsRow(ws, ["Toplam Gelir", "", "", totalRevenue], "revenue");
   }
 
@@ -339,13 +339,13 @@ export async function exportGelirTablosuReport(
       const dataRow = ws.addRow(["", r.account_code, r.account_name ?? "", Math.abs(r.net_amount)]);
       dataRow.getCell(4).numFmt = CURRENCY_FORMAT;
     }
-    const totalExpense = expenseRows.reduce((s, r) => s + Math.abs(Number(r.net_amount)), 0);
+    const totalExpense = expenseRows.reduce((s, r) => s + Math.abs(r.net_amount), 0);
     addTotalsRow(ws, ["Toplam Gider", "", "", totalExpense], "expense");
   }
 
   // Net income
-  const totalRevenue = revenueRows.reduce((s, r) => s + Number(r.net_amount), 0);
-  const totalExpense = expenseRows.reduce((s, r) => s + Math.abs(Number(r.net_amount)), 0);
+  const totalRevenue = revenueRows.reduce((s, r) => s + r.net_amount, 0);
+  const totalExpense = expenseRows.reduce((s, r) => s + Math.abs(r.net_amount), 0);
   ws.addRow([]);
   const netRow = ws.addRow(["NET KÂR / ZARAR", "", "", totalRevenue - totalExpense]);
   netRow.font = { bold: true, size: 12 };
@@ -356,7 +356,7 @@ export async function exportGelirTablosuReport(
     color: { argb: totalRevenue - totalExpense >= 0 ? "FF1B6B3F" : "FFB91C1C" },
   };
 
-  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${headerRow.number + 1}`, activeCell: `A${headerRow.number + 1}` }];
+  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${String(headerRow.number + 1)}`, activeCell: `A${String(headerRow.number + 1)}` }];
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);
@@ -395,7 +395,7 @@ export async function exportKdvBeyanReport(
 
   for (const r of rows) {
     const dataRow = ws.addRow([
-      `%${r.kdv_rate}`,
+      `%${String(r.kdv_rate)}`,
       r.invoice_count,
       r.total_subtotal,
       r.total_kdv,
@@ -407,14 +407,14 @@ export async function exportKdvBeyanReport(
   }
 
   // Totals
-  const totalCount = rows.reduce((s, r) => s + Number(r.invoice_count), 0);
-  const totalSub = rows.reduce((s, r) => s + Number(r.total_subtotal), 0);
-  const totalKdv = rows.reduce((s, r) => s + Number(r.total_kdv), 0);
-  const totalGrand = rows.reduce((s, r) => s + Number(r.total_grand), 0);
+  const totalCount = rows.reduce((s, r) => s + r.invoice_count, 0);
+  const totalSub = rows.reduce((s, r) => s + r.total_subtotal, 0);
+  const totalKdv = rows.reduce((s, r) => s + r.total_kdv, 0);
+  const totalGrand = rows.reduce((s, r) => s + r.total_grand, 0);
 
   addTotalsRow(ws, ["TOPLAM", totalCount, totalSub, totalKdv, totalGrand], "TOPLAM");
 
-  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${headerRow.number + 1}`, activeCell: `A${headerRow.number + 1}` }];
+  ws.views = [{ state: "frozen" as const, ySplit: headerRow.number, xSplit: 0, topLeftCell: `A${String(headerRow.number + 1)}`, activeCell: `A${String(headerRow.number + 1)}` }];
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);

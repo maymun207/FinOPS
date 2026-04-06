@@ -193,7 +193,7 @@ export const gibFaturaSubmitTask = task({
           `UPDATE invoices SET gib_status = 'rejected', updated_at = NOW() WHERE id = $1`,
           [payload.invoiceId],
         );
-        throw new Error(`GIB submission failed: ${submitResult.errorMessage}`);
+        throw new Error(`GIB submission failed: ${String(submitResult.errorMessage)}`);
       }
 
       logger.info("Submitted to GIB", { ettn: submitResult.ettn, status: submitResult.status });
@@ -228,7 +228,7 @@ export const gibFaturaSubmitTask = task({
       });
 
       return {
-        status: gibStatus as "accepted" | "rejected" | "pending",
+        status: gibStatus,
         invoiceId: payload.invoiceId,
         ettn: submitResult.ettn,
         latencyMs: Date.now() - startTime,

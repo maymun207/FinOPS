@@ -34,7 +34,7 @@ async function generateEmbedding(
 
   if (!response.ok) {
     throw new Error(
-      `Gemini embedding failed: ${response.status} ${await response.text()}`,
+      `Gemini embedding failed: ${String(response.status)} ${await response.text()}`,
     );
   }
 
@@ -49,7 +49,7 @@ async function main() {
     process.exit(1);
   }
 
-  const results: Array<{ question: string; sql: string; vectorStr: string }> =
+  const results: { question: string; sql: string; vectorStr: string }[] =
     [];
 
   for (let i = 0; i < TRAINING_CORPUS.length; i++) {
@@ -60,14 +60,14 @@ async function main() {
     if (i > 0) await new Promise((r) => setTimeout(r, 200));
 
     process.stderr.write(
-      `  [${i + 1}/${TRAINING_CORPUS.length}] "${pair.question.substring(0, 50)}..."\n`,
+      `  [${String(i + 1)}/${String(TRAINING_CORPUS.length)}] "${pair.question.substring(0, 50)}..."\n`,
     );
 
     const embedding = await generateEmbedding(pair.question, apiKey);
 
     if (embedding.length !== 768) {
       process.stderr.write(
-        `  ⚠️  Bad dimension: ${embedding.length}\n`,
+        `  ⚠️  Bad dimension: ${String(embedding.length)}\n`,
       );
       continue;
     }
@@ -82,11 +82,11 @@ async function main() {
   // Output JSON to stdout
   console.log(JSON.stringify(results, null, 0));
   process.stderr.write(
-    `\n✅ Generated ${results.length} embeddings\n`,
+    `\n✅ Generated ${String(results.length)} embeddings\n`,
   );
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error("Failed:", err);
   process.exit(1);
 });
