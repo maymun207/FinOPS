@@ -32,7 +32,8 @@ export const contactImportRowSchema = z.object({
   taxId: z
     .string()
     .optional()
-    .transform((val) => val?.trim() ?? undefined)
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must become undefined
+    .transform((val) => val?.trim() || undefined)
     .pipe(
       z
         .string()
@@ -53,13 +54,15 @@ export const contactImportRowSchema = z.object({
     .string()
     .max(50, "Telefon numarası çok uzun")
     .optional()
-    .transform((val) => val?.trim() ?? undefined),
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must become undefined
+    .transform((val) => val?.trim() || undefined),
 
   /** Address — optional free text */
   address: z
     .string()
     .optional()
-    .transform((val) => val?.trim() ?? undefined),
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must become undefined
+    .transform((val) => val?.trim() || undefined),
 });
 
 export type ContactImportRow = z.infer<typeof contactImportRowSchema>;

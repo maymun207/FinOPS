@@ -67,7 +67,8 @@ export const journalImportRowSchema = z.object({
     .string()
     .max(500)
     .optional()
-    .transform((val) => val?.trim() ?? undefined),
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty string must become undefined
+    .transform((val) => val?.trim() || undefined),
 
   /** Source type — defaults to 'import' */
   sourceType: z
