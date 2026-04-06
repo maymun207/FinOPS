@@ -2,16 +2,17 @@
  * CFO tRPC Router — Virtual CFO (AI-powered financial assistant).
  *
  * Endpoints:
- *   cfo.ask          — Natural-language question → SQL → results
- *   cfo.approve      — Approve a generated Q&A pair for training
- *   cfo.history      — Recent AI query log for this company
+ *   cfo.ask            — Natural-language question → trigger Vanna inference
+ *   cfo.getRunResult   — Poll Trigger.dev run status + retrieve output
+ *   cfo.approve        — Approve a generated Q&A pair for training
+ *   cfo.history        — Recent AI query log for this company
  */
 import "server-only";
 import { z } from "zod";
 import { createTRPCRouter, companyProcedure } from "../trpc";
 import { db } from "@/server/db";
 import { sql } from "drizzle-orm";
-import { tasks } from "@trigger.dev/sdk/v3";
+import { tasks, runs } from "@trigger.dev/sdk/v3";
 
 export const cfoRouter = createTRPCRouter({
   /**
@@ -34,7 +35,54 @@ export const cfoRouter = createTRPCRouter({
 
       return {
         runId: handle.id,
-        status: "triggered",
+        status: "triggered" as const,
+      };
+    }),
+
+  /**
+   * Poll the Trigger.dev run status and retrieve the output when complete.
+   * Used by the frontend to check if inference is done.
+   */
+  getRunResult: companyProcedure
+    .input(
+      z.object({
+        runId: z.string().min(1),
+      }),
+    )
+    .query(async ({ input }) => {
+      const run = await runs.retrieve(input.runId);
+
+      if (run.status === "COMPLETED") {
+        // The run output has the shape from vanna-inference task
+        const output = run.output as {
+          status: "success" | "rejected";
+          question: string;
+          sql: string;
+          rows: Record<string, unknown>[];
+          rowCount?: number;
+          reason?: string;
+          similarityScore?: number;
+          latencyMs: number;
+        } | undefined;
+
+        return {
+          status: "completed" as const,
+          output: output ?? null,
+        };
+      }
+
+      if (run.status === "FAILED" || run.status === "CANCELED" || run.status === "CRASHED" || run.status === "SYSTEM_FAILURE" || run.status === "EXPIRED" || run.status === "TIMED_OUT") {
+        return {
+          status: "failed" as const,
+          error: run.error?.message ?? "Bilinmeyen hata oluştu",
+          output: null,
+        };
+      }
+
+      // Still running (QUEUED, EXECUTING, REATTEMPTING, FROZEN, etc.)
+      return {
+        status: "running" as const,
+        output: null,
       };
     }),
 
@@ -59,7 +107,7 @@ export const cfoRouter = createTRPCRouter({
 
       return {
         runId: handle.id,
-        status: "training_triggered",
+        status: "training_triggered" as const,
       };
     }),
 
