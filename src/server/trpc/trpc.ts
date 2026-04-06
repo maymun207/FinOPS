@@ -28,16 +28,24 @@ export type { TRPCContext } from "./context";
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 
+// ── Logging middleware ──────────────────────────────────────────────
+// Applied to ALL procedures — logs every tRPC call to Axiom with timing.
+// Import is inline to avoid "server-only" issues in test environments.
+import { loggingMiddleware } from "./middleware/logging";
+
+const loggedProcedure = t.procedure.use(loggingMiddleware);
+
 /**
  * Public procedure — no auth required.
+ * Includes Axiom logging middleware.
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = loggedProcedure;
 
 /**
  * Protected procedure — throws UNAUTHORIZED if not signed in.
  * Narrows ctx.userId and ctx.db to non-null.
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const protectedProcedure = loggedProcedure.use(({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
@@ -54,7 +62,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
  * Throws UNAUTHORIZED if not signed in, FORBIDDEN if no company resolved.
  * Narrows ctx.userId, ctx.companyId, ctx.orgId to non-null.
  */
-export const companyProcedure = t.procedure.use(({ ctx, next }) => {
+export const companyProcedure = loggedProcedure.use(({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
