@@ -3,128 +3,40 @@
 /**
  * CFOChatSession — State machine orchestrator for the Virtual CFO chat flow.
  *
- * States:
- *   IDLE → GENERATING → AWAITING_CONFIRMATION → COMPLETE (or ERROR at any stage)
+ * Uses Zustand store (persists across page navigations within the same session).
+ * States: IDLE → GENERATING → AWAITING_CONFIRMATION → COMPLETE (or ERROR)
  *
  * Option 1 flow: Vanna inference already returns rows, so we skip a separate
  * EXECUTING state. User confirms → rows are revealed from the cached output.
+ *
+ * TanStack Query retry: 0 — each retry would consume Gemini API credits.
  */
-import React, { useReducer, useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useCFOStore } from "@/lib/cfo/cfo-store";
 import { CFOChatInput } from "./CFOChatInput";
 import { SQLPreviewPanel } from "./SQLPreviewPanel";
-import { CFOResultsGrid } from "./CFOResultsGrid";
-import { CFOResultChart } from "./CFOResultChart";
 import { CFOFeedback } from "./CFOFeedback";
 import dynamic from "next/dynamic";
 
-// Dynamically import to avoid SSR issues with AG Grid
-const ResultsGrid = dynamic(
+// Dynamically import to avoid SSR issues with AG Grid / ECharts
+const CFOResultsGrid = dynamic(
   () => import("./CFOResultsGrid").then((m) => ({ default: m.CFOResultsGrid })),
   { ssr: false },
 );
-const ResultChart = dynamic(
+const CFOResultChart = dynamic(
   () => import("./CFOResultChart").then((m) => ({ default: m.CFOResultChart })),
   { ssr: false },
 );
 
-// ── State Machine Types ─────────────────────────────────────────────
-
-type ChatState =
-  | { phase: "IDLE" }
-  | { phase: "GENERATING"; runId: string; question: string }
-  | {
-      phase: "AWAITING_CONFIRMATION";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | {
-      phase: "COMPLETE";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | { phase: "ERROR"; message: string; question?: string };
-
-type ChatAction =
-  | { type: "ASK"; runId: string; question: string }
-  | {
-      type: "INFERENCE_DONE";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | { type: "INFERENCE_REJECTED"; reason: string; question: string }
-  | { type: "CONFIRM" }
-  | { type: "CANCEL" }
-  | { type: "ERROR"; message: string; question?: string }
-  | { type: "RESET" };
-
-function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  switch (action.type) {
-    case "ASK":
-      return { phase: "GENERATING", runId: action.runId, question: action.question };
-
-    case "INFERENCE_DONE":
-      return {
-        phase: "AWAITING_CONFIRMATION",
-        question: action.question,
-        sql: action.sql,
-        rows: action.rows,
-        rowCount: action.rowCount,
-        latencyMs: action.latencyMs,
-      };
-
-    case "INFERENCE_REJECTED":
-      return {
-        phase: "ERROR",
-        message: `SQL güvenlik kontrolünden geçemedi: ${action.reason}`,
-        question: action.question,
-      };
-
-    case "CONFIRM":
-      if (state.phase !== "AWAITING_CONFIRMATION") return state;
-      return {
-        phase: "COMPLETE",
-        question: state.question,
-        sql: state.sql,
-        rows: state.rows,
-        rowCount: state.rowCount,
-        latencyMs: state.latencyMs,
-      };
-
-    case "CANCEL":
-      return { phase: "IDLE" };
-
-    case "ERROR":
-      return { phase: "ERROR", message: action.message, question: action.question };
-
-    case "RESET":
-      return { phase: "IDLE" };
-
-    default:
-      return state;
-  }
-}
-
-// ── Component ───────────────────────────────────────────────────────
-
 export function CFOChatSession() {
-  const [state, dispatch] = useReducer(chatReducer, { phase: "IDLE" });
+  const { state, ask, inferenceDone, inferenceRejected, confirm, cancel, error, reset } =
+    useCFOStore();
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const askMutation = trpc.cfo.ask.useMutation();
+  // retry: 0 — each retry would consume Gemini API credits
+  const askMutation = trpc.cfo.ask.useMutation({ retry: false });
   const approveMutation = trpc.cfo.approve.useMutation();
-
-  // We can't use useQuery with polling directly because refetchInterval
-  // needs the runId. Instead we'll use the trpc client utility.
   const utils = trpc.useUtils();
 
   // ── Polling for inference result ──────────────────────────────────
@@ -150,16 +62,15 @@ export function CFOChatSession() {
           pollingRef.current = null;
 
           if (result.output.status === "rejected") {
-            dispatch({
-              type: "INFERENCE_REJECTED",
-              reason: result.output.reason ?? "Bilinmeyen hata",
+            inferenceRejected(
               question,
-            });
+              result.output.reason ?? "Bilinmeyen hata",
+            );
           } else {
-            dispatch({
-              type: "INFERENCE_DONE",
+            inferenceDone({
               question: result.output.question,
               sql: result.output.sql,
+              explanation: result.output.explanation ?? "",
               rows: result.output.rows,
               rowCount: result.output.rowCount ?? 0,
               latencyMs: result.output.latencyMs,
@@ -168,21 +79,16 @@ export function CFOChatSession() {
         } else if (result.status === "failed") {
           clearInterval(pollingRef.current!);
           pollingRef.current = null;
-          dispatch({
-            type: "ERROR",
-            message: result.error ?? "Görev başarısız oldu",
-            question,
-          });
+          error(result.error ?? "Görev başarısız oldu", question);
         }
         // status === "running" → keep polling
       } catch (err) {
         clearInterval(pollingRef.current!);
         pollingRef.current = null;
-        dispatch({
-          type: "ERROR",
-          message: err instanceof Error ? err.message : "Bağlantı hatası",
+        error(
+          err instanceof Error ? err.message : "Bağlantı hatası",
           question,
-        });
+        );
       }
     }, 2000); // Poll every 2 seconds
 
@@ -192,7 +98,7 @@ export function CFOChatSession() {
         pollingRef.current = null;
       }
     };
-  }, [state.phase, state.phase === "GENERATING" ? state.runId : null, utils]);
+  }, [state.phase, state.phase === "GENERATING" ? state.runId : null, utils, inferenceDone, inferenceRejected, error]);
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -200,25 +106,16 @@ export function CFOChatSession() {
     async (question: string) => {
       try {
         const result = await askMutation.mutateAsync({ question });
-        dispatch({ type: "ASK", runId: result.runId, question });
+        ask(result.runId, question);
       } catch (err) {
-        dispatch({
-          type: "ERROR",
-          message: err instanceof Error ? err.message : "Soru gönderilemedi",
+        error(
+          err instanceof Error ? err.message : "Soru gönderilemedi",
           question,
-        });
+        );
       }
     },
-    [askMutation],
+    [askMutation, ask, error],
   );
-
-  const handleConfirm = useCallback(() => {
-    dispatch({ type: "CONFIRM" });
-  }, []);
-
-  const handleCancel = useCallback(() => {
-    dispatch({ type: "CANCEL" });
-  }, []);
 
   const handleApprove = useCallback(
     (question: string, sql: string) => {
@@ -226,10 +123,6 @@ export function CFOChatSession() {
     },
     [approveMutation],
   );
-
-  const handleReset = useCallback(() => {
-    dispatch({ type: "RESET" });
-  }, []);
 
   // ── Render ────────────────────────────────────────────────────────
 
@@ -304,9 +197,9 @@ export function CFOChatSession() {
           </div>
           <SQLPreviewPanel
             sql={state.sql}
-            explanation={`Bu sorgu ${state.rowCount} satır döndürdü.`}
-            onConfirm={handleConfirm}
-            onCancel={handleCancel}
+            explanation={state.explanation || undefined}
+            onConfirm={confirm}
+            onCancel={cancel}
           />
         </div>
       )}
@@ -330,7 +223,7 @@ export function CFOChatSession() {
               <span style={{ fontWeight: 500 }}>{state.question}</span>
             </div>
             <button
-              onClick={handleReset}
+              onClick={reset}
               style={{
                 fontSize: 12,
                 color: "#64748b",
@@ -349,10 +242,10 @@ export function CFOChatSession() {
           </div>
 
           {/* Auto-chart (renders nothing for table_only) */}
-          <ResultChart rows={state.rows} />
+          <CFOResultChart rows={state.rows} />
 
           {/* Results grid */}
-          <ResultsGrid rows={state.rows} height="400px" />
+          <CFOResultsGrid rows={state.rows} height="400px" />
 
           {/* Feedback */}
           <CFOFeedback
@@ -392,7 +285,7 @@ export function CFOChatSession() {
             </div>
           )}
           <button
-            onClick={handleReset}
+            onClick={reset}
             style={{
               alignSelf: "flex-start",
               marginTop: 4,

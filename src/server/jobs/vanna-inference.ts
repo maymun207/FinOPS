@@ -173,6 +173,48 @@ async function generateSQL(
   return (codeBlockMatch?.[1] ?? rawText).trim();
 }
 
+/**
+ * Generate a brief one-sentence Turkish explanation of the generated SQL.
+ * This is shown to the user in the AWAITING_CONFIRMATION state.
+ */
+async function explainSQL(
+  question: string,
+  sql: string,
+  apiKey: string,
+): Promise<string> {
+  const prompt = `Kullanıcının sorusu: "${question}"
+
+Üretilen SQL:
+${sql}
+
+Bu SQL sorgusunun ne yaptığını bir cümle ile Türkçe açıkla. Kısa ve öz ol. Her JOIN veya alt sorguyu ayrı ayrı açıklama. Sonuç olarak ne hesaplandığına odaklan.`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 128,
+          },
+        }),
+      },
+    );
+
+    if (!response.ok) return "";
+
+    const data = (await response.json()) as GeminiGenerateResponse;
+    return (data.candidates[0]?.content.parts[0]?.text ?? "").trim();
+  } catch {
+    // Non-critical — return empty if explanation fails
+    return "";
+  }
+}
+
 // ── Similar Q&A lookup via pgvector ────────────────────────────────
 
 interface SimilarPair {
@@ -273,6 +315,10 @@ SQL:`;
       const queryResult = await pool.query(generatedSQL, [payload.companyId]);
       logger.info("Query executed", { rowCount: queryResult.rowCount });
 
+      // 6b. Generate natural language explanation (second Gemini call)
+      const explanation = await explainSQL(payload.question, generatedSQL, apiKey);
+      logger.info("SQL explanation generated", { explanation: explanation.substring(0, 100) });
+
       // 7. Log to ai_query_log
       await pool.query(
         `INSERT INTO ai_query_log (company_id, user_id, query_text, response_text, model, tokens_used, latency_ms)
@@ -292,6 +338,7 @@ SQL:`;
         status: "success" as const,
         question: payload.question,
         sql: generatedSQL,
+        explanation,
         rows: queryResult.rows.slice(0, 100),
         rowCount: queryResult.rowCount ?? 0,
         similarityScore: similar[0]?.similarity ?? 0,

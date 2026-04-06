@@ -1,12 +1,12 @@
 /**
  * chart-type-detection.test.ts — Unit tests for auto-chart type detection.
  *
- * Validates the 5 rules from the Step 18 spec:
- *   1. date + numeric → line
- *   2. category + numeric → bar
- *   3. debit/credit numerics → grouped bar
- *   4. one row, one numeric → KPI
- *   5. >10 rows, no date → table only
+ * Validates the 4-rule algorithm from the Step 18 spec:
+ *   Rule 1: date + one numeric → line
+ *   Rule 2: category + one numeric → bar
+ *   Rule 3: debit/credit numerics → grouped bar
+ *   Rule 4: one row, one numeric → KPI
+ *   Default: table only
  */
 import { describe, it, expect } from "vitest";
 import { detectChartType, inferColumns } from "@/lib/cfo/chart-detection";
@@ -92,5 +92,41 @@ describe("detectChartType", () => {
       { hesap: "320", borç: 2000, alacak: 4000 },
     ];
     expect(detectChartType(rows)).toBe("grouped_bar");
+  });
+
+  // Spec test: columns [date, amount] → 'line'
+  it("returns 'line' for columns [date, amount]", () => {
+    const rows = [
+      { date: "2024-01-01", amount: 10000 },
+      { date: "2024-02-01", amount: 12000 },
+    ];
+    expect(detectChartType(rows)).toBe("line");
+  });
+
+  // Spec test: columns [account_name, total] → 'bar'
+  it("returns 'bar' for columns [account_name, total]", () => {
+    const rows = [
+      { account_name: "100 Kasa", total: 45000 },
+      { account_name: "320 Borçlar", total: 28000 },
+      { account_name: "600 Gelirler", total: 92000 },
+    ];
+    expect(detectChartType(rows)).toBe("bar");
+  });
+
+  // Spec test: columns [total_kdv] (single value) → 'kpi'
+  it("returns 'kpi' for columns [total_kdv] single value", () => {
+    const rows = [{ total_kdv: 23456.78 }];
+    expect(detectChartType(rows)).toBe("kpi");
+  });
+
+  // Spec test: 15 rows, columns [id, description, amount, date] → 'table'
+  it("returns 'table_only' for 15 rows with [id, description, amount, date]", () => {
+    const rows = Array.from({ length: 15 }, (_, i) => ({
+      id: i + 1,
+      description: `İşlem ${i + 1}`,
+      amount: 1000 * (i + 1),
+      date: `2024-${String(i % 12 + 1).padStart(2, "0")}-15`,
+    }));
+    expect(detectChartType(rows)).toBe("table_only");
   });
 });

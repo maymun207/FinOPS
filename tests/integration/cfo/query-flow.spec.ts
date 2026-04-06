@@ -1,231 +1,156 @@
 /**
- * query-flow.spec.ts — E2E tests for CFO chat state machine transitions.
+ * query-flow.spec.ts — Integration tests for CFO chat state machine.
  *
- * Tests the reducer logic directly (no browser needed) to verify
+ * Tests the Zustand store logic directly (no browser needed) to verify
  * the state machine handles all transitions correctly.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
+import { useCFOStore } from "@/lib/cfo/cfo-store";
 
-// ── Inline state machine types (same as CFOChatSession) ─────────────
-
-type ChatState =
-  | { phase: "IDLE" }
-  | { phase: "GENERATING"; runId: string; question: string }
-  | {
-      phase: "AWAITING_CONFIRMATION";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | {
-      phase: "COMPLETE";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | { phase: "ERROR"; message: string; question?: string };
-
-type ChatAction =
-  | { type: "ASK"; runId: string; question: string }
-  | {
-      type: "INFERENCE_DONE";
-      question: string;
-      sql: string;
-      rows: Record<string, unknown>[];
-      rowCount: number;
-      latencyMs: number;
-    }
-  | { type: "INFERENCE_REJECTED"; reason: string; question: string }
-  | { type: "CONFIRM" }
-  | { type: "CANCEL" }
-  | { type: "ERROR"; message: string; question?: string }
-  | { type: "RESET" };
-
-function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  switch (action.type) {
-    case "ASK":
-      return { phase: "GENERATING", runId: action.runId, question: action.question };
-    case "INFERENCE_DONE":
-      return {
-        phase: "AWAITING_CONFIRMATION",
-        question: action.question,
-        sql: action.sql,
-        rows: action.rows,
-        rowCount: action.rowCount,
-        latencyMs: action.latencyMs,
-      };
-    case "INFERENCE_REJECTED":
-      return {
-        phase: "ERROR",
-        message: `SQL güvenlik kontrolünden geçemedi: ${action.reason}`,
-        question: action.question,
-      };
-    case "CONFIRM":
-      if (state.phase !== "AWAITING_CONFIRMATION") return state;
-      return {
-        phase: "COMPLETE",
-        question: state.question,
-        sql: state.sql,
-        rows: state.rows,
-        rowCount: state.rowCount,
-        latencyMs: state.latencyMs,
-      };
-    case "CANCEL":
-      return { phase: "IDLE" };
-    case "ERROR":
-      return { phase: "ERROR", message: action.message, question: action.question };
-    case "RESET":
-      return { phase: "IDLE" };
-    default:
-      return state;
-  }
-}
-
-// ── Tests ───────────────────────────────────────────────────────────
-
-describe("CFO Chat State Machine", () => {
-  const INITIAL: ChatState = { phase: "IDLE" };
-
+describe("CFO Chat State Machine (Zustand)", () => {
   const SAMPLE_SQL = `SELECT SUM(ili.kdv_rate * ili.line_total / 100) AS "Toplam KDV" FROM invoice_line_items ili`;
   const SAMPLE_ROWS: Record<string, unknown>[] = [{ "Toplam KDV": 23456.78 }];
+  const SAMPLE_EXPLANATION = "Bu sorgu, fatura kalem satırlarından toplam KDV tutarını hesaplar.";
 
-  it("IDLE → ASK → GENERATING", () => {
-    const next = chatReducer(INITIAL, {
-      type: "ASK",
-      runId: "run_abc",
-      question: "Bu dönemde toplam KDV?",
-    });
-    expect(next.phase).toBe("GENERATING");
-    if (next.phase === "GENERATING") {
-      expect(next.runId).toBe("run_abc");
-      expect(next.question).toBe("Bu dönemde toplam KDV?");
+  beforeEach(() => {
+    useCFOStore.setState({ state: { phase: "IDLE" } });
+  });
+
+  it("starts in IDLE phase", () => {
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
+  });
+
+  it("IDLE → ask → GENERATING", () => {
+    useCFOStore.getState().ask("run_abc", "Bu dönemde toplam KDV?");
+    const state = useCFOStore.getState().state;
+    expect(state.phase).toBe("GENERATING");
+    if (state.phase === "GENERATING") {
+      expect(state.runId).toBe("run_abc");
+      expect(state.question).toBe("Bu dönemde toplam KDV?");
     }
   });
 
-  it("GENERATING → INFERENCE_DONE → AWAITING_CONFIRMATION", () => {
-    const generating: ChatState = {
-      phase: "GENERATING",
-      runId: "run_abc",
-      question: "Toplam KDV?",
-    };
-    const next = chatReducer(generating, {
-      type: "INFERENCE_DONE",
+  it("GENERATING → inferenceDone → AWAITING_CONFIRMATION", () => {
+    useCFOStore.getState().ask("run_abc", "Toplam KDV?");
+    useCFOStore.getState().inferenceDone({
       question: "Toplam KDV?",
       sql: SAMPLE_SQL,
+      explanation: SAMPLE_EXPLANATION,
       rows: SAMPLE_ROWS,
       rowCount: 1,
       latencyMs: 1500,
     });
-    expect(next.phase).toBe("AWAITING_CONFIRMATION");
-    if (next.phase === "AWAITING_CONFIRMATION") {
-      expect(next.sql).toBe(SAMPLE_SQL);
-      expect(next.rows).toEqual(SAMPLE_ROWS);
-      expect(next.rowCount).toBe(1);
+    const state = useCFOStore.getState().state;
+    expect(state.phase).toBe("AWAITING_CONFIRMATION");
+    if (state.phase === "AWAITING_CONFIRMATION") {
+      expect(state.sql).toBe(SAMPLE_SQL);
+      expect(state.explanation).toBe(SAMPLE_EXPLANATION);
+      expect(state.rows).toEqual(SAMPLE_ROWS);
+      expect(state.rowCount).toBe(1);
     }
   });
 
-  it("AWAITING_CONFIRMATION → CONFIRM → COMPLETE", () => {
-    const awaiting: ChatState = {
-      phase: "AWAITING_CONFIRMATION",
-      question: "Toplam KDV?",
-      sql: SAMPLE_SQL,
-      rows: SAMPLE_ROWS,
-      rowCount: 1,
-      latencyMs: 1500,
-    };
-    const next = chatReducer(awaiting, { type: "CONFIRM" });
-    expect(next.phase).toBe("COMPLETE");
-    if (next.phase === "COMPLETE") {
-      expect(next.rows).toEqual(SAMPLE_ROWS);
-    }
-  });
-
-  it("AWAITING_CONFIRMATION → CANCEL → IDLE", () => {
-    const awaiting: ChatState = {
-      phase: "AWAITING_CONFIRMATION",
-      question: "Toplam KDV?",
-      sql: SAMPLE_SQL,
-      rows: SAMPLE_ROWS,
-      rowCount: 1,
-      latencyMs: 1500,
-    };
-    const next = chatReducer(awaiting, { type: "CANCEL" });
-    expect(next.phase).toBe("IDLE");
-  });
-
-  it("GENERATING → INFERENCE_REJECTED → ERROR", () => {
-    const generating: ChatState = {
-      phase: "GENERATING",
-      runId: "run_xyz",
-      question: "Drop table?",
-    };
-    const next = chatReducer(generating, {
-      type: "INFERENCE_REJECTED",
-      reason: "Only SELECT queries allowed",
-      question: "Drop table?",
+  it("AWAITING_CONFIRMATION → confirm → COMPLETE", () => {
+    // Set up AWAITING state
+    useCFOStore.setState({
+      state: {
+        phase: "AWAITING_CONFIRMATION",
+        question: "Toplam KDV?",
+        sql: SAMPLE_SQL,
+        explanation: SAMPLE_EXPLANATION,
+        rows: SAMPLE_ROWS,
+        rowCount: 1,
+        latencyMs: 1500,
+      },
     });
-    expect(next.phase).toBe("ERROR");
-    if (next.phase === "ERROR") {
-      expect(next.message).toContain("güvenlik");
-      expect(next.question).toBe("Drop table?");
+    useCFOStore.getState().confirm();
+    const state = useCFOStore.getState().state;
+    expect(state.phase).toBe("COMPLETE");
+    if (state.phase === "COMPLETE") {
+      expect(state.rows).toEqual(SAMPLE_ROWS);
     }
   });
 
-  it("ERROR → RESET → IDLE", () => {
-    const error: ChatState = {
-      phase: "ERROR",
-      message: "Connection failed",
-      question: "Test?",
-    };
-    const next = chatReducer(error, { type: "RESET" });
-    expect(next.phase).toBe("IDLE");
+  it("AWAITING_CONFIRMATION → cancel → IDLE", () => {
+    useCFOStore.setState({
+      state: {
+        phase: "AWAITING_CONFIRMATION",
+        question: "Toplam KDV?",
+        sql: SAMPLE_SQL,
+        explanation: SAMPLE_EXPLANATION,
+        rows: SAMPLE_ROWS,
+        rowCount: 1,
+        latencyMs: 1500,
+      },
+    });
+    useCFOStore.getState().cancel();
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
   });
 
-  it("COMPLETE → RESET → IDLE (new question)", () => {
-    const complete: ChatState = {
-      phase: "COMPLETE",
-      question: "Toplam?",
-      sql: SAMPLE_SQL,
-      rows: SAMPLE_ROWS,
-      rowCount: 1,
-      latencyMs: 1000,
-    };
-    const next = chatReducer(complete, { type: "RESET" });
-    expect(next.phase).toBe("IDLE");
+  it("GENERATING → inferenceRejected → ERROR", () => {
+    useCFOStore.getState().ask("run_xyz", "Drop table?");
+    useCFOStore.getState().inferenceRejected("Drop table?", "Only SELECT queries allowed");
+    const state = useCFOStore.getState().state;
+    expect(state.phase).toBe("ERROR");
+    if (state.phase === "ERROR") {
+      expect(state.message).toContain("güvenlik");
+      expect(state.question).toBe("Drop table?");
+    }
   });
 
-  it("CONFIRM from non-AWAITING state is a no-op", () => {
-    const idle: ChatState = { phase: "IDLE" };
-    expect(chatReducer(idle, { type: "CONFIRM" })).toBe(idle);
+  it("ERROR → reset → IDLE", () => {
+    useCFOStore.getState().error("Connection failed", "Test?");
+    useCFOStore.getState().reset();
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
+  });
 
-    const generating: ChatState = { phase: "GENERATING", runId: "x", question: "y" };
-    expect(chatReducer(generating, { type: "CONFIRM" })).toBe(generating);
+  it("COMPLETE → reset → IDLE (new question)", () => {
+    useCFOStore.setState({
+      state: {
+        phase: "COMPLETE",
+        question: "Toplam?",
+        sql: SAMPLE_SQL,
+        explanation: SAMPLE_EXPLANATION,
+        rows: SAMPLE_ROWS,
+        rowCount: 1,
+        latencyMs: 1000,
+      },
+    });
+    useCFOStore.getState().reset();
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
+  });
+
+  it("confirm from non-AWAITING state is a no-op", () => {
+    // From IDLE
+    useCFOStore.getState().confirm();
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
+
+    // From GENERATING
+    useCFOStore.getState().ask("x", "y");
+    useCFOStore.getState().confirm();
+    expect(useCFOStore.getState().state.phase).toBe("GENERATING");
   });
 
   it("full happy path: IDLE → GENERATING → AWAITING → COMPLETE → IDLE", () => {
-    let s: ChatState = { phase: "IDLE" };
+    const store = useCFOStore.getState();
 
-    s = chatReducer(s, { type: "ASK", runId: "run_1", question: "KDV?" });
-    expect(s.phase).toBe("GENERATING");
+    store.ask("run_1", "KDV?");
+    expect(useCFOStore.getState().state.phase).toBe("GENERATING");
 
-    s = chatReducer(s, {
-      type: "INFERENCE_DONE",
+    useCFOStore.getState().inferenceDone({
       question: "KDV?",
       sql: SAMPLE_SQL,
+      explanation: SAMPLE_EXPLANATION,
       rows: SAMPLE_ROWS,
       rowCount: 1,
       latencyMs: 800,
     });
-    expect(s.phase).toBe("AWAITING_CONFIRMATION");
+    expect(useCFOStore.getState().state.phase).toBe("AWAITING_CONFIRMATION");
 
-    s = chatReducer(s, { type: "CONFIRM" });
-    expect(s.phase).toBe("COMPLETE");
+    useCFOStore.getState().confirm();
+    expect(useCFOStore.getState().state.phase).toBe("COMPLETE");
 
-    s = chatReducer(s, { type: "RESET" });
-    expect(s.phase).toBe("IDLE");
+    useCFOStore.getState().reset();
+    expect(useCFOStore.getState().state.phase).toBe("IDLE");
   });
 });

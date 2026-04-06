@@ -1,12 +1,12 @@
 /**
  * detectChartType — Auto-detect the best chart type from query result shape.
  *
- * Rules (from spec):
- *   1. date/period column + one numeric → line chart (trend)
- *   2. category column + one numeric → bar chart
- *   3. two numeric columns (debit, credit) → grouped bar
- *   4. one row with one numeric → KPI card (no chart)
- *   5. >10 rows and no date column → table only (no chart)
+ * 4-rule algorithm (from spec):
+ *   Rule 1: date/period column + exactly 1 numeric → line chart (trend)
+ *   Rule 2: category column + exactly 1 numeric → bar chart
+ *   Rule 3: two numeric columns matching debit/credit pattern → grouped bar
+ *   Rule 4: one row with one numeric → KPI card (Tremor Metric)
+ *   Default: table only (AG Grid, no chart)
  */
 
 export type ChartType = "line" | "bar" | "grouped_bar" | "kpi" | "table_only";
@@ -73,25 +73,16 @@ export function detectChartType(rows: Record<string, unknown>[]): ChartType {
     return "grouped_bar";
   }
 
-  // Rule 1: date/period column + at least one numeric → line chart
-  if (dateCols.length > 0 && numericCols.length >= 1) {
+  // Rule 1: date/period column + exactly 1 numeric → line chart
+  if (dateCols.length > 0 && numericCols.length === 1) {
     return "line";
   }
 
-  // Rule 2: category column + one numeric → bar chart
-  if (stringCols.length > 0 && numericCols.length >= 1 && rows.length <= 20) {
+  // Rule 2: category column + exactly 1 numeric → bar chart
+  if (stringCols.length > 0 && numericCols.length === 1 && rows.length <= 20) {
     return "bar";
   }
 
-  // Rule 5: >10 rows and no date column → table only
-  if (rows.length > 10 && dateCols.length === 0) {
-    return "table_only";
-  }
-
-  // Default: if we have a few rows with a string + numeric, bar chart
-  if (stringCols.length > 0 && numericCols.length >= 1) {
-    return "bar";
-  }
-
+  // Default: table only (no chart matches)
   return "table_only";
 }

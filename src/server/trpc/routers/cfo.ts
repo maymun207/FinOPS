@@ -58,6 +58,7 @@ export const cfoRouter = createTRPCRouter({
           status: "success" | "rejected";
           question: string;
           sql: string;
+          explanation?: string;
           rows: Record<string, unknown>[];
           rowCount?: number;
           reason?: string;

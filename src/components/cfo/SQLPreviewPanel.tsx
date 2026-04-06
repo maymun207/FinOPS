@@ -4,12 +4,14 @@
  * SQLPreviewPanel — Shows generated SQL with syntax highlighting.
  *
  * Features:
- *   - CSS-based SQL keyword highlighting
- *   - AI explanation text
+ *   - react-syntax-highlighter with SQL language + dark theme
+ *   - AI explanation text (natural language summary from Gemini)
  *   - "Sorguyu Çalıştır" (Run) + "İptal" (Cancel) action buttons
- *   - Dark theme to match BaseGrid
+ *   - Read-only SQL — user cannot edit
  */
-import React, { useMemo } from "react";
+import React from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Props {
   sql: string;
@@ -18,61 +20,7 @@ interface Props {
   onCancel: () => void;
 }
 
-// Simple SQL keyword highlighting with <span> wrapping
-const SQL_KEYWORDS = [
-  "SELECT", "FROM", "WHERE", "JOIN", "LEFT", "RIGHT", "INNER", "OUTER",
-  "ON", "AND", "OR", "NOT", "IN", "AS", "GROUP", "BY", "ORDER", "HAVING",
-  "LIMIT", "OFFSET", "CASE", "WHEN", "THEN", "ELSE", "END", "WITH",
-  "UNION", "ALL", "DISTINCT", "COUNT", "SUM", "AVG", "MIN", "MAX",
-  "CAST", "COALESCE", "NULL", "IS", "BETWEEN", "LIKE", "ILIKE", "EXISTS",
-  "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP", "VALUES",
-  "ASC", "DESC", "OVER", "PARTITION", "TRUE", "FALSE",
-];
-
-function highlightSQL(raw: string): string {
-  // Escape HTML
-  let html = raw
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  // Highlight string literals
-  html = html.replace(
-    /'[^']*'/g,
-    (match) => `<span style="color:#a5d6a7">${match}</span>`,
-  );
-
-  // Highlight numbers
-  html = html.replace(
-    /\b(\d+\.?\d*)\b/g,
-    (match) => `<span style="color:#ce93d8">${match}</span>`,
-  );
-
-  // Highlight keywords (case-insensitive)
-  const keywordPattern = new RegExp(`\\b(${SQL_KEYWORDS.join("|")})\\b`, "gi");
-  html = html.replace(
-    keywordPattern,
-    (match) => `<span style="color:#64b5f6;font-weight:600">${match.toUpperCase()}</span>`,
-  );
-
-  // Highlight $1, $2 params
-  html = html.replace(
-    /\$\d+/g,
-    (match) => `<span style="color:#ffb74d">${match}</span>`,
-  );
-
-  // Highlight comments
-  html = html.replace(
-    /--.*$/gm,
-    (match) => `<span style="color:#78909c;font-style:italic">${match}</span>`,
-  );
-
-  return html;
-}
-
 export function SQLPreviewPanel({ sql: sqlText, explanation, onConfirm, onCancel }: Props) {
-  const highlighted = useMemo(() => highlightSQL(sqlText), [sqlText]);
-
   return (
     <div
       id="cfo-sql-preview"
@@ -121,21 +69,28 @@ export function SQLPreviewPanel({ sql: sqlText, explanation, onConfirm, onCancel
         </div>
       </div>
 
-      {/* SQL Code */}
-      <pre
-        style={{
-          padding: 16,
-          margin: 0,
-          overflowX: "auto",
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          fontSize: 13,
-          lineHeight: 1.6,
-          color: "#e2e8f0",
-        }}
-        dangerouslySetInnerHTML={{ __html: highlighted }}
-      />
+      {/* SQL Code — react-syntax-highlighter, read-only */}
+      <div style={{ fontSize: 13 }}>
+        <SyntaxHighlighter
+          language="sql"
+          style={vscDarkPlus}
+          customStyle={{
+            margin: 0,
+            padding: 16,
+            background: "#0f172a",
+            borderRadius: 0,
+            fontSize: 13,
+            lineHeight: 1.6,
+          }}
+          showLineNumbers={false}
+          wrapLines={true}
+          wrapLongLines={true}
+        >
+          {sqlText}
+        </SyntaxHighlighter>
+      </div>
 
-      {/* Explanation */}
+      {/* AI Explanation */}
       {explanation && (
         <div
           style={{

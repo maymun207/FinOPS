@@ -12,6 +12,7 @@
  */
 import React, { useMemo } from "react";
 import dynamic from "next/dynamic";
+import { Card, Metric, Text } from "@tremor/react";
 import {
   detectChartType,
   inferColumns,
@@ -25,7 +26,7 @@ interface Props {
   height?: number;
 }
 
-// ── KPI Card ────────────────────────────────────────────────────────
+// ── KPI Card — Tremor Metric ────────────────────────────────────────
 
 function KPICard({ rows }: { rows: Record<string, unknown>[] }) {
   const row = rows[0]!;
@@ -41,44 +42,25 @@ function KPICard({ rows }: { rows: Record<string, unknown>[] }) {
   }).format(value as number);
 
   return (
-    <div
+    <Card
       id="cfo-kpi-card"
+      className="mx-auto max-w-xs"
+      decoration="top"
+      decorationColor="blue"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 32,
         background: "linear-gradient(135deg, #1e293b, #0f172a)",
-        borderRadius: 12,
         border: "1px solid #334155",
+        textAlign: "center",
+        padding: "32px 24px",
       }}
     >
-      <div
-        style={{
-          fontSize: 11,
-          color: "#64748b",
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          fontWeight: 600,
-          marginBottom: 8,
-        }}
-      >
+      <Text style={{ color: "#64748b", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em" }}>
         {label.replace(/_/g, " ")}
-      </div>
-      <div
-        style={{
-          fontSize: 36,
-          fontWeight: 700,
-          background: "linear-gradient(135deg, #60a5fa, #34d399)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
-      >
+      </Text>
+      <Metric style={{ color: "#60a5fa", fontSize: 36, marginTop: 8, fontFamily: "'JetBrains Mono', monospace" }}>
         {formatted}
-      </div>
-    </div>
+      </Metric>
+    </Card>
   );
 }
 
