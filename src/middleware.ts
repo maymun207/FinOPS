@@ -5,7 +5,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * Everything else is protected by Clerk.
  */
 const isPublicRoute = createRouteMatcher([
-  "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   // tRPC API — auth is enforced at the router level via protectedProcedure / companyProcedure
@@ -20,9 +19,9 @@ export default clerkMiddleware(async (auth, request) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals, static assets, and Sentry tunnel route
-    "/((?!monitoring|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Match all routes except Next.js internals and static assets (canonical Next.js pattern)
+    '/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for API routes
-    "/(api|trpc)(.*)",
+    '/(api|trpc)(.*)',
   ],
 };
