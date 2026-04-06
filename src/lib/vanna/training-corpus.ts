@@ -34,7 +34,7 @@ FROM invoices i
 JOIN invoice_line_items ili ON ili.invoice_id = i.id
 WHERE i.company_id = $1
   AND i.fiscal_period_id = (SELECT id FROM fiscal_periods WHERE company_id = $1 AND is_closed = false ORDER BY start_date DESC LIMIT 1)
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -49,7 +49,7 @@ JOIN invoice_line_items ili ON ili.invoice_id = i.id
 WHERE i.company_id = $1
 GROUP BY ili.kdv_rate
 ORDER BY ili.kdv_rate
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -65,7 +65,7 @@ LIMIT 100;`,
 FROM invoices i
 JOIN invoice_line_items ili ON ili.invoice_id = i.id
 WHERE i.company_id = $1
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -77,7 +77,7 @@ FROM invoices i
 WHERE i.company_id = $1
 GROUP BY TO_CHAR(i.invoice_date, 'YYYY-MM')
 ORDER BY "Ay"
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -95,7 +95,7 @@ WHERE i.company_id = $1
   AND ili.kdv_rate = 20
 GROUP BY i.id, i.invoice_number, c.name, i.invoice_date, i.subtotal, i.kdv_amount
 ORDER BY i.invoice_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -112,7 +112,7 @@ JOIN invoice_line_items ili ON ili.invoice_id = i.id
 WHERE i.company_id = $1
 GROUP BY ili.kdv_rate, i.invoice_type
 ORDER BY ili.kdv_rate, i.invoice_type
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -122,7 +122,7 @@ LIMIT 100;`,
 FROM invoices i
 WHERE i.company_id = $1
   AND i.invoice_type = 'sales'
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "kdv",
@@ -132,7 +132,7 @@ LIMIT 100;`,
 FROM invoices i
 WHERE i.company_id = $1
   AND i.invoice_type = 'purchase'
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
   AND i.due_date < CURRENT_DATE
 ORDER BY i.due_date
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -171,7 +171,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
 GROUP BY c.name
 ORDER BY c.name
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -187,7 +187,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
 GROUP BY c.name
 ORDER BY SUM(i.grand_total) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -197,7 +197,7 @@ LIMIT 100;`,
   TO_CHAR(SUM(CASE WHEN i.invoice_type = 'purchase' AND i.status IN ('sent', 'overdue') THEN i.grand_total ELSE 0 END), 'FM999,999,999.00') AS "Toplam Borç"
 FROM invoices i
 WHERE i.company_id = $1
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -213,7 +213,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
 GROUP BY c.name
 ORDER BY SUM(i.grand_total) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -228,7 +228,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
 GROUP BY c.name
 ORDER BY SUM(i.grand_total) DESC
-LIMIT 5;`,
+LIMIT 5`,
   },
   {
     category: "receivables",
@@ -245,7 +245,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
   AND i.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
 ORDER BY i.due_date
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "receivables",
@@ -258,7 +258,7 @@ FROM invoices i
 WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
 GROUP BY i.invoice_type
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ JOIN chart_of_accounts coa ON coa.code = jel.account_code AND coa.company_id = j
 WHERE je.company_id = $1
 GROUP BY coa.code, coa.name
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "trial_balance",
@@ -302,7 +302,7 @@ JOIN chart_of_accounts coa ON coa.code = jel.account_code AND coa.company_id = j
 WHERE je.company_id = $1
 GROUP BY LEFT(coa.code, 1)
 ORDER BY LEFT(coa.code, 1)
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "trial_balance",
@@ -318,7 +318,7 @@ WHERE je.company_id = $1
   AND coa.code IN ('100', '101', '102')
 GROUP BY coa.code, coa.name
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "trial_balance",
@@ -335,7 +335,7 @@ FROM journal_entry_lines jel
 JOIN journal_entries je ON je.id = jel.journal_entry_id
 JOIN chart_of_accounts coa ON coa.code = jel.account_code AND coa.company_id = je.company_id
 WHERE je.company_id = $1
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "trial_balance",
@@ -353,7 +353,7 @@ WHERE je.company_id = $1
 GROUP BY coa.code, coa.name
 HAVING SUM(jel.debit) > 0 OR SUM(jel.credit) > 0
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "trial_balance",
@@ -371,7 +371,7 @@ WHERE je.company_id = $1
 GROUP BY coa.code, coa.name, coa.account_type
 HAVING ABS(SUM(jel.debit) - SUM(jel.credit)) > 0.01
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -390,7 +390,7 @@ JOIN invoices i ON i.id = p.invoice_id
 WHERE p.company_id = $1
 GROUP BY TO_CHAR(p.payment_date, 'YYYY-MM')
 ORDER BY "Ay"
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "cashflow",
@@ -403,7 +403,7 @@ FROM payments p
 WHERE p.company_id = $1
 GROUP BY p.payment_method
 ORDER BY SUM(p.amount) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "cashflow",
@@ -416,7 +416,7 @@ FROM payments p
 JOIN invoices i ON i.id = p.invoice_id
 WHERE p.company_id = $1
   AND TO_CHAR(p.payment_date, 'YYYY-MM') = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "cashflow",
@@ -427,7 +427,7 @@ FROM journal_entry_lines jel
 JOIN journal_entries je ON je.id = jel.journal_entry_id
 WHERE je.company_id = $1
   AND jel.account_code IN ('100', '101', '102')
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "cashflow",
@@ -441,7 +441,7 @@ WHERE p.company_id = $1
   AND p.payment_date >= CURRENT_DATE - INTERVAL '3 months'
 GROUP BY TO_CHAR(p.payment_date, 'YYYY-MM')
 ORDER BY "Ay"
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "cashflow",
@@ -451,7 +451,7 @@ LIMIT 100;`,
 FROM payments p
 WHERE p.company_id = $1
   AND p.payment_method = 'credit_card'
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -471,7 +471,7 @@ FROM invoices i
 JOIN contacts c ON c.id = i.contact_id
 WHERE i.company_id = $1
 ORDER BY i.invoice_date DESC
-LIMIT 10;`,
+LIMIT 10`,
   },
   {
     category: "invoice",
@@ -488,7 +488,7 @@ WHERE i.company_id = $1
   AND i.invoice_type = 'sales'
   AND i.status IN ('sent', 'overdue')
 ORDER BY i.due_date
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -504,7 +504,7 @@ JOIN contacts c ON c.id = i.contact_id
 WHERE i.company_id = $1
   AND c.name ILIKE '%' || $2 || '%'
 ORDER BY i.invoice_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -517,7 +517,7 @@ FROM invoices i
 WHERE i.company_id = $1
 GROUP BY i.status
 ORDER BY COUNT(*) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -532,7 +532,7 @@ JOIN contacts c ON c.id = i.contact_id
 WHERE i.company_id = $1
   AND i.grand_total > 100000
 ORDER BY i.grand_total DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -545,7 +545,7 @@ FROM invoices i
 WHERE i.company_id = $1
   AND TO_CHAR(i.invoice_date, 'YYYY-MM') = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
 GROUP BY i.invoice_type
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -562,7 +562,7 @@ WHERE i.company_id = $1
   AND i.status IN ('sent', 'overdue')
   AND i.due_date < CURRENT_DATE
 ORDER BY (CURRENT_DATE - i.due_date) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "invoice",
@@ -577,7 +577,7 @@ JOIN contacts c ON c.id = i.contact_id
 WHERE i.company_id = $1
 GROUP BY c.name, c.contact_type
 ORDER BY SUM(i.grand_total) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -598,7 +598,7 @@ JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id
 WHERE je.company_id = $1
 GROUP BY je.id, je.entry_number, je.entry_date, je.description, je.source
 ORDER BY je.entry_date DESC, je.entry_number DESC
-LIMIT 20;`,
+LIMIT 20`,
   },
   {
     category: "journal",
@@ -615,7 +615,7 @@ JOIN journal_entries je ON je.id = jel.journal_entry_id
 WHERE je.company_id = $1
   AND jel.account_code = '100'
 ORDER BY je.entry_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "journal",
@@ -629,7 +629,7 @@ FROM journal_entries je
 WHERE je.company_id = $1
   AND je.entry_date BETWEEN CURRENT_DATE - INTERVAL '30 days' AND CURRENT_DATE
 ORDER BY je.entry_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "journal",
@@ -642,7 +642,7 @@ FROM journal_entries je
 WHERE je.company_id = $1
   AND je.source = 'manual'
 ORDER BY je.entry_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "journal",
@@ -658,7 +658,7 @@ WHERE je.company_id = $1
   AND je.source = 'invoice'
 GROUP BY je.id, je.entry_number, je.entry_date, je.description
 ORDER BY je.entry_date DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "journal",
@@ -674,7 +674,7 @@ JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id
 WHERE je.company_id = $1
   AND je.is_opening = true
 ORDER BY jel.account_code
-LIMIT 100;`,
+LIMIT 100`,
   },
 
   // ──────────────────────────────────────────────────────────────
@@ -697,7 +697,7 @@ WHERE je.company_id = $1
   AND coa.account_type = 'expense'
 GROUP BY LEFT(jel.account_code, 1)
 ORDER BY SUM(jel.debit) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -712,7 +712,7 @@ WHERE je.company_id = $1
   AND coa.account_type = 'expense'
 GROUP BY TO_CHAR(je.entry_date, 'YYYY-MM')
 ORDER BY "Ay"
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -728,7 +728,7 @@ WHERE je.company_id = $1
   AND coa.account_type = 'expense'
 GROUP BY coa.code, coa.name
 ORDER BY SUM(jel.debit) DESC
-LIMIT 10;`,
+LIMIT 10`,
   },
   {
     category: "expense",
@@ -744,7 +744,7 @@ WHERE je.company_id = $1
   AND coa.code LIKE '77%'
 GROUP BY coa.code, coa.name
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -760,7 +760,7 @@ WHERE je.company_id = $1
   AND coa.code LIKE '76%'
 GROUP BY coa.code, coa.name
 ORDER BY coa.code
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -777,7 +777,7 @@ FROM journal_entry_lines jel
 JOIN journal_entries je ON je.id = jel.journal_entry_id
 JOIN chart_of_accounts coa ON coa.code = jel.account_code AND coa.company_id = je.company_id
 WHERE je.company_id = $1
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -793,7 +793,7 @@ WHERE je.company_id = $1
   AND coa.account_type = 'expense'
 GROUP BY fp.name, fp.start_date
 ORDER BY fp.start_date
-LIMIT 100;`,
+LIMIT 100`,
   },
   {
     category: "expense",
@@ -819,7 +819,7 @@ GROUP BY
     ELSE 'Diğer'
   END
 ORDER BY SUM(jel.debit) DESC
-LIMIT 100;`,
+LIMIT 100`,
   },
 ];
 

@@ -9,7 +9,7 @@ CREATE TABLE vanna_training (
   company_id UUID REFERENCES companies(id),  -- NULL = global seed
   question TEXT NOT NULL,
   sql TEXT NOT NULL,
-  embedding vector(768),  -- Gemini text-embedding-004 dimension
+  embedding vector(768),  -- Gemini gemini-embedding-001 dimension
   was_user_approved BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );

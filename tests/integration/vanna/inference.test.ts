@@ -20,7 +20,7 @@
 import { describe, it, expect } from "vitest";
 import { TRAINING_CORPUS } from "@/lib/vanna/training-corpus";
 import { SCHEMA_CONTEXT, SYSTEM_PROMPT } from "@/lib/vanna/schema-context";
-import { validateSQL } from "@/server/jobs/vanna-inference";
+import { validateSQL, extractTableNames, extractCTENames, ALLOWED_TABLES } from "@/server/jobs/vanna-inference";
 
 describe("Training Corpus", () => {
   it("has exactly 50 training pairs", () => {
@@ -218,5 +218,101 @@ describe("System Prompt", () => {
   it("blocks dangerous functions", () => {
     expect(SYSTEM_PROMPT).toContain("pg_sleep");
     expect(SYSTEM_PROMPT).toContain("dblink");
+  });
+});
+
+describe("Table Name Extraction", () => {
+  it("extracts single table from simple SELECT", () => {
+    const tables = extractTableNames("SELECT * FROM invoices WHERE company_id = $1");
+    expect(tables).toEqual(["invoices"]);
+  });
+
+  it("extracts multiple tables from JOIN", () => {
+    const tables = extractTableNames(
+      "SELECT * FROM invoices JOIN contacts ON contacts.id = invoices.contact_id WHERE invoices.company_id = $1",
+    );
+    expect(tables).toContain("invoices");
+    expect(tables).toContain("contacts");
+  });
+
+  it("extracts from subquery correctly", () => {
+    const tables = extractTableNames(
+      "SELECT * FROM journal_entries je JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id WHERE je.company_id = $1",
+    );
+    expect(tables).toContain("journal_entries");
+    expect(tables).toContain("journal_entry_lines");
+  });
+
+  it("handles schema-qualified names", () => {
+    const tables = extractTableNames("SELECT * FROM public.invoices WHERE company_id = $1");
+    expect(tables).toContain("invoices");
+  });
+
+  it("deduplicates table names", () => {
+    const tables = extractTableNames(
+      "SELECT * FROM invoices i1 JOIN invoices i2 ON i1.id = i2.id WHERE i1.company_id = $1",
+    );
+    expect(tables.filter((t) => t === "invoices").length).toBe(1);
+  });
+});
+
+describe("Table Name Allowlist", () => {
+  it("ALLOWED_TABLES contains exactly 9 tables", () => {
+    expect(ALLOWED_TABLES.size).toBe(9);
+  });
+
+  it("ALLOWED_TABLES matches schema context tables", () => {
+    const schemaTablePattern = /CREATE TABLE (\w+)/gi;
+    const schemaTables: string[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = schemaTablePattern.exec(SCHEMA_CONTEXT)) !== null) {
+      if (m[1]) schemaTables.push(m[1].toLowerCase());
+    }
+    for (const table of schemaTables) {
+      expect(ALLOWED_TABLES.has(table), `Schema table ${table} not in ALLOWED_TABLES`).toBe(true);
+    }
+  });
+
+  it("rejects queries referencing pg_catalog tables", () => {
+    const result = validateSQL(
+      "SELECT * FROM pg_catalog.pg_tables WHERE company_id = $1 LIMIT 10",
+    );
+    expect(result.safe).toBe(false);
+    expect(result.reason).toContain("not allowed");
+  });
+
+  it("rejects queries referencing information_schema", () => {
+    const result = validateSQL(
+      "SELECT * FROM information_schema.columns WHERE company_id = $1 LIMIT 10",
+    );
+    expect(result.safe).toBe(false);
+    expect(result.reason).toContain("not allowed");
+  });
+
+  it("rejects queries referencing non-existent custom tables", () => {
+    const result = validateSQL(
+      "SELECT * FROM users WHERE company_id = $1 LIMIT 10",
+    );
+    expect(result.safe).toBe(false);
+    expect(result.reason).toContain("not allowed");
+  });
+
+  it("accepts queries using only allowed tables", () => {
+    const result = validateSQL(
+      "SELECT i.*, c.name FROM invoices i JOIN contacts c ON c.id = i.contact_id WHERE i.company_id = $1 LIMIT 10",
+    );
+    expect(result.safe).toBe(true);
+  });
+
+  it("all training corpus SQL uses only allowed tables", () => {
+    for (const pair of TRAINING_CORPUS) {
+      const tables = extractTableNames(pair.sql);
+      for (const table of tables) {
+        expect(
+          ALLOWED_TABLES.has(table),
+          `Training pair "${pair.question}" references disallowed table: ${table}`,
+        ).toBe(true);
+      }
+    }
   });
 });

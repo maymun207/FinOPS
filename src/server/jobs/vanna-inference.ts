@@ -3,7 +3,7 @@
  *
  * Pipeline:
  *   1. Accept user's natural-language question
- *   2. Generate embedding via Gemini text-embedding-004
+ *   2. Generate embedding via Gemini gemini-embedding-001
  *   3. Find top-5 similar Q&A pairs from pgvector (cosine similarity)
  *   4. Build few-shot prompt with schema context + similar examples
  *   5. Generate SQL via Gemini 2.0 Flash
@@ -29,12 +29,60 @@ interface GeminiGenerateResponse {
 
 // ── Safety validation ──────────────────────────────────────────────
 
+/** Tables the Virtual CFO is allowed to query — matches SCHEMA_CONTEXT */
+export const ALLOWED_TABLES = new Set([
+  "companies",
+  "fiscal_periods",
+  "chart_of_accounts",
+  "contacts",
+  "invoices",
+  "invoice_line_items",
+  "journal_entries",
+  "journal_entry_lines",
+  "payments",
+]);
+
 const DANGEROUS_PATTERNS = [
   /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE)\b/i,
   /\b(pg_sleep|dblink|COPY|lo_import|lo_export)\b/i,
   /\b(pg_read_file|pg_write_file)\b/i,
   /;.*;/,  // multiple statements
 ];
+
+/**
+ * Extract table names referenced in FROM and JOIN clauses.
+ * Handles: FROM table, FROM schema.table, JOIN table, FROM table alias,
+ * FROM table AS alias, sub-selects (ignored), CTEs (ignored).
+ */
+export function extractTableNames(sql: string): string[] {
+  const tables: string[] = [];
+  // Match FROM / JOIN followed by a table name (skip subqueries starting with "(")
+  const pattern = /\b(?:FROM|JOIN)\s+(?:ONLY\s+)?(?:(\w+)\.)?(\w+)\b/gi;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(sql)) !== null) {
+    const raw = match[2];
+    if (!raw) continue;
+    const tableName = raw.toLowerCase();
+    // Skip SQL keywords that can follow FROM/JOIN
+    if (tableName !== "select" && tableName !== "lateral") {
+      tables.push(tableName);
+    }
+  }
+  return [...new Set(tables)];
+}
+
+/** Extract CTE names defined by WITH ... AS (...) */
+export function extractCTENames(sql: string): Set<string> {
+  const ctes = new Set<string>();
+  // Match: WITH name AS ( or , name AS (
+  const pattern = /\b(?:WITH|,)\s+(\w+)\s+AS\s*\(/gi;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(sql)) !== null) {
+    const raw = match[1];
+    if (raw) ctes.add(raw.toLowerCase());
+  }
+  return ctes;
+}
 
 export function validateSQL(sql: string): { safe: boolean; reason?: string } {
   const trimmed = sql.trim();
@@ -55,6 +103,17 @@ export function validateSQL(sql: string): { safe: boolean; reason?: string } {
     return { safe: false, reason: "Query must include company_id filter" };
   }
 
+  // Table-name allowlist: every referenced table must be in ALLOWED_TABLES
+  // CTE names (WITH x AS ...) are virtual tables, exclude from allowlist check
+  const cteNames = extractCTENames(trimmed);
+  const tables = extractTableNames(trimmed);
+  for (const table of tables) {
+    if (cteNames.has(table)) continue; // skip CTE-defined names
+    if (!ALLOWED_TABLES.has(table)) {
+      return { safe: false, reason: `Table not allowed: ${table}` };
+    }
+  }
+
   return { safe: true };
 }
 
@@ -62,13 +121,14 @@ export function validateSQL(sql: string): { safe: boolean; reason?: string } {
 
 async function generateEmbedding(text: string, apiKey: string): Promise<number[]> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "models/text-embedding-004",
+        model: "models/gemini-embedding-001",
         content: { parts: [{ text }] },
+        outputDimensionality: 768,
       }),
     },
   );
