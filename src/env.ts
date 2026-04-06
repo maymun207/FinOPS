@@ -8,9 +8,9 @@ export const env = createEnv({
   server: {
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     SUPABASE_DB_URL: z.url(),
+    SUPABASE_DB_URL_UNPOOLED: z.string().url().optional(),
 
     CLERK_SECRET_KEY: z.string().min(1),
-    CLERK_SUPABASE_JWT_TEMPLATE: z.string().default("supabase"),
 
     TRIGGER_SECRET_KEY: z.string().min(1),
 
@@ -41,8 +41,8 @@ export const env = createEnv({
   runtimeEnv: {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
+    SUPABASE_DB_URL_UNPOOLED: process.env.SUPABASE_DB_URL_UNPOOLED,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    CLERK_SUPABASE_JWT_TEMPLATE: process.env.CLERK_SUPABASE_JWT_TEMPLATE,
     TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
     CLOUDFLARE_R2_ACCOUNT_ID: process.env.CLOUDFLARE_R2_ACCOUNT_ID,
     CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,

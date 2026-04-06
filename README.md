@@ -32,7 +32,7 @@ cd FinOPS
 ### 2. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Set up environment variables
@@ -46,7 +46,7 @@ Fill in `.env` with your real credentials. See `.env.example` for all required v
 ### 4. Start development server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ---
@@ -61,9 +61,9 @@ See [`.env.example`](.env.example) for the full list of required environment var
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase | ✅ |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase | ✅ |
 | `SUPABASE_DB_URL` | Supabase | ✅ |
+| `SUPABASE_DB_URL_UNPOOLED` | Supabase | ✅ (migrations only) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk | ✅ |
 | `CLERK_SECRET_KEY` | Clerk | ✅ |
-| `CLERK_SUPABASE_JWT_TEMPLATE` | Clerk | ✅ |
 | `TRIGGER_SECRET_KEY` | Trigger.dev | ✅ |
 | `CLOUDFLARE_R2_ACCOUNT_ID` | Cloudflare R2 | ✅ |
 | `CLOUDFLARE_R2_ACCESS_KEY_ID` | Cloudflare R2 | ✅ |
@@ -95,4 +95,4 @@ This project uses [Supabase](https://supabase.com) as the primary database and b
 
 - Migrations are tracked in `supabase/migrations/`
 - TypeScript types are auto-generated in `src/types/supabase.ts`
-- Auth is handled via Clerk + Supabase JWT template named `supabase`
+- Auth is handled via Clerk + Supabase Third Party Auth integration

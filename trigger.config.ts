@@ -22,15 +22,7 @@ export default defineConfig({
   // Directories containing task definitions
   dirs: ["src/server/jobs"],
 
-  // Exclude jobs that depend on @/server/db → env.ts validation chain.
-  // These need all Next.js env vars which aren't available in the Trigger.dev
-  // container. Only vanna-* jobs are self-contained (raw pg.Pool + Gemini API).
-  ignorePatterns: [
-    "**/billing-reminder-daily*",
-    "**/duckdb-nightly-sync*",
-    "**/excel-import-large*",
-    "**/report-generate*",
-  ],
+  // ignorePatterns removed — jobs now use _env.ts instead of @/env.ts
 
   // Build configuration — exclude native/binary deps from bundling
   build: {

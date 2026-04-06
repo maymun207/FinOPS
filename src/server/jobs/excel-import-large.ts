@@ -11,10 +11,11 @@
  *   7. Return { total, valid, invalid } counts
  *
  * Triggered when file size > 4MB (routed from UI via tRPC).
+ *
+ * NOTE: Uses jobEnv + own pg.Pool — does NOT import @/server/db or @/env.ts.
  */
 import { task, logger } from "@trigger.dev/sdk/v3";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import * as XLSX from "xlsx";
 import { parseExcelBuffer } from "@/lib/excel/parse";
 import { parseTurkishNumber } from "@/lib/parsers/turkish-number";
 import { parseExcelDate } from "@/lib/parsers/excel-date";
@@ -27,23 +28,21 @@ import {
 import {
   journalImportRowSchema,
 } from "@/lib/schemas/journal-import.schema";
-import { db } from "@/server/db";
-import { importQuarantine } from "@/server/db/schema/import-quarantine";
-import { columnMappingProfiles } from "@/server/db/schema/column-mapping-profiles";
-import { eq } from "drizzle-orm";
+import { jobEnv } from "./_env";
+import { Pool } from "pg";
 
 // ── S3 client for Cloudflare R2 ────────────────────────────────────
 
 const s3 = new S3Client({
   region: "auto",
-  endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: `https://${jobEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "",
+    accessKeyId: jobEnv.R2_ACCESS_KEY_ID,
+    secretAccessKey: jobEnv.R2_SECRET_ACCESS_KEY,
   },
 });
 
-const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME ?? "finops-imports";
+const R2_BUCKET = jobEnv.R2_BUCKET_NAME;
 
 // ── Schema lookup ──────────────────────────────────────────────────
 
@@ -109,117 +108,148 @@ export const excelImportLargeTask = task({
   }) => {
     logger.info("Starting large file import", { r2Key: payload.r2Key });
 
-    // 1. Download from R2
-    const cmd = new GetObjectCommand({
-      Bucket: R2_BUCKET,
-      Key: payload.r2Key,
-    });
-    const response = await s3.send(cmd);
-    const body = await response.Body?.transformToByteArray();
-    if (!body) {
-      throw new Error(`Failed to download file from R2: ${payload.r2Key}`);
-    }
+    const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
 
-    logger.info("Downloaded file", { sizeBytes: body.length });
-
-    // 2. Parse with SheetJS
-    const result = parseExcelBuffer(body.buffer as ArrayBuffer, payload.r2Key);
-    const sheet = result.sheets[0];
-    if (!sheet || sheet.rows.length === 0) {
-      logger.warn("No data found in file");
-      return { total: 0, valid: 0, invalid: 0 };
-    }
-
-    logger.info("Parsed file", {
-      rows: sheet.rows.length,
-      headers: sheet.headers,
-    });
-
-    // 3. Load column mapping
-    let mapping: Array<{ sourceCol: string; targetField: string }> = [];
-
-    if (payload.mappingProfileId) {
-      const [profile] = await db
-        .select()
-        .from(columnMappingProfiles)
-        .where(eq(columnMappingProfiles.id, payload.mappingProfileId))
-        .limit(1);
-
-      if (profile?.mapping) {
-        mapping = profile.mapping as typeof mapping;
+    try {
+      // 1. Download from R2
+      const cmd = new GetObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: payload.r2Key,
+      });
+      const response = await s3.send(cmd);
+      const body = await response.Body?.transformToByteArray();
+      if (!body) {
+        throw new Error(`Failed to download file from R2: ${payload.r2Key}`);
       }
-    }
 
-    // If no mapping, use identity mapping (column name = field name)
-    if (mapping.length === 0) {
-      mapping = sheet.headers.map((h) => ({
-        sourceCol: h,
-        targetField: h,
-      }));
-    }
+      logger.info("Downloaded file", { sizeBytes: body.length });
 
-    // 4-5. Apply mapping + Turkish parsers + Zod validation
-    const schema = SCHEMA_MAP[payload.importType];
-    let validCount = 0;
-    let invalidCount = 0;
-    const quarantineRecords: Array<{
-      companyId: string;
-      source: string;
-      rawData: Record<string, unknown>;
-      status: string;
-      errorMessage: string | null;
-      mappingProfileId: string | null;
-    }> = [];
+      // 2. Parse with SheetJS
+      const result = parseExcelBuffer(body.buffer as ArrayBuffer, payload.r2Key);
+      const sheet = result.sheets[0];
+      if (!sheet || sheet.rows.length === 0) {
+        logger.warn("No data found in file");
+        return { total: 0, valid: 0, invalid: 0 };
+      }
 
-    for (const row of sheet.rows) {
-      // Apply column mapping
-      const mapped: Record<string, unknown> = {};
-      for (const m of mapping) {
-        if (m.targetField) {
-          mapped[m.targetField] = row[m.sourceCol];
+      logger.info("Parsed file", {
+        rows: sheet.rows.length,
+        headers: sheet.headers,
+      });
+
+      // 3. Load column mapping
+      let mapping: Array<{ sourceCol: string; targetField: string }> = [];
+
+      if (payload.mappingProfileId) {
+        const { rows } = await pool.query(
+          `SELECT mapping FROM column_mapping_profiles WHERE id = $1 LIMIT 1`,
+          [payload.mappingProfileId]
+        );
+        if (rows[0]?.mapping) {
+          mapping = rows[0].mapping as typeof mapping;
         }
       }
 
-      // Apply Turkish locale parsers
-      const parsed = applyTurkishParsers(mapped);
-
-      // Validate with Zod
-      const result = schema.safeParse(parsed);
-      let errorMessage: string | null = null;
-
-      if (result.success) {
-        validCount++;
-      } else {
-        invalidCount++;
-        errorMessage = result.error.issues
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; ");
+      // If no mapping, use identity mapping (column name = field name)
+      if (mapping.length === 0) {
+        mapping = sheet.headers.map((h) => ({
+          sourceCol: h,
+          targetField: h,
+        }));
       }
 
-      quarantineRecords.push({
-        companyId: payload.companyId,
-        source: "excel-large",
-        rawData: parsed,
-        status: "pending",
-        errorMessage,
-        mappingProfileId: payload.mappingProfileId ?? null,
-      });
+      // 4-5. Apply mapping + Turkish parsers + Zod validation
+      const schema = SCHEMA_MAP[payload.importType];
+      let validCount = 0;
+      let invalidCount = 0;
+
+      // Collect quarantine records for batch insert
+      const quarantineRecords: Array<{
+        companyId: string;
+        source: string;
+        rawData: Record<string, unknown>;
+        status: string;
+        errorMessage: string | null;
+        mappingProfileId: string | null;
+      }> = [];
+
+      for (const row of sheet.rows) {
+        // Apply column mapping
+        const mapped: Record<string, unknown> = {};
+        for (const m of mapping) {
+          if (m.targetField) {
+            mapped[m.targetField] = row[m.sourceCol];
+          }
+        }
+
+        // Apply Turkish locale parsers
+        const parsed = applyTurkishParsers(mapped);
+
+        // Validate with Zod
+        const validationResult = schema.safeParse(parsed);
+        let errorMessage: string | null = null;
+
+        if (validationResult.success) {
+          validCount++;
+        } else {
+          invalidCount++;
+          errorMessage = validationResult.error.issues
+            .map((i) => `${i.path.join(".")}: ${i.message}`)
+            .join("; ");
+        }
+
+        quarantineRecords.push({
+          companyId: payload.companyId,
+          source: "excel-large",
+          rawData: parsed,
+          status: "pending",
+          errorMessage,
+          mappingProfileId: payload.mappingProfileId ?? null,
+        });
+      }
+
+      // 6. Bulk-insert into quarantine (batch of 500)
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < quarantineRecords.length; i += BATCH_SIZE) {
+        const batch = quarantineRecords.slice(i, i + BATCH_SIZE);
+
+        // Build parameterized INSERT for each batch
+        const values: unknown[] = [];
+        const placeholders: string[] = [];
+
+        batch.forEach((rec, idx) => {
+          const offset = idx * 6;
+          placeholders.push(
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}::jsonb, $${offset + 4}, $${offset + 5}, $${offset + 6})`
+          );
+          values.push(
+            rec.companyId,
+            rec.source,
+            JSON.stringify(rec.rawData),
+            rec.status,
+            rec.errorMessage,
+            rec.mappingProfileId
+          );
+        });
+
+        await pool.query(
+          `INSERT INTO import_quarantine (company_id, source, raw_data, status, error_message, mapping_profile_id)
+           VALUES ${placeholders.join(", ")}`,
+          values
+        );
+
+        logger.info(`Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}`, {
+          count: batch.length,
+        });
+      }
+
+      // 7. Return counts
+      const total = validCount + invalidCount;
+      logger.info("Import complete", { total, valid: validCount, invalid: invalidCount });
+
+      return { total, valid: validCount, invalid: invalidCount };
+    } finally {
+      await pool.end();
     }
-
-    // 6. Bulk-insert into quarantine (batch of 500)
-    const BATCH_SIZE = 500;
-    for (let i = 0; i < quarantineRecords.length; i += BATCH_SIZE) {
-      const batch = quarantineRecords.slice(i, i + BATCH_SIZE);
-      await db.insert(importQuarantine).values(batch);
-      logger.info(`Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}`, {
-        count: batch.length,
-      });
-    }
-
-    // 7. Return counts
-    const total = validCount + invalidCount;
-    logger.info("Import complete", { total, valid: validCount, invalid: invalidCount });
-
-    return { total, valid: validCount, invalid: invalidCount };
   },
 });

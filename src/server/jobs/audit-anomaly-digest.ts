@@ -16,6 +16,7 @@
 import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { Pool } from "pg";
 import { log } from "@/lib/telemetry/axiom";
+import { jobEnv } from "./_env";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -40,10 +41,8 @@ export const auditAnomalyDigestTask = schedules.task({
   cron: "0 9 * * *",
   run: async () => {
     const startTime = Date.now();
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) throw new Error("DATABASE_URL is not set");
 
-    const pool = new Pool({ connectionString: dbUrl, max: 2 });
+    const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
 
     try {
       logger.info("Starting audit anomaly digest");
@@ -186,7 +185,7 @@ export const auditAnomalyDigestTask = schedules.task({
         const html = buildDigestEmail(companyAnomalies);
 
         try {
-          const resendKey = process.env.RESEND_API_KEY;
+          const resendKey = jobEnv.RESEND_API_KEY;
           if (resendKey) {
             const { Resend } = await import("resend");
             const resend = new Resend(resendKey);

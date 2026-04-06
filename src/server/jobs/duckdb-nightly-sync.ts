@@ -11,31 +11,34 @@
  *   5. Create 7 analytical views
  *   6. Query all views and cache results in Supabase (cached_report_results)
  *   7. Cache has 1-hour TTL — stale entries are ignored by the tRPC router
+ *
+ * NOTE: Uses jobEnv + own pg.Pool — does NOT import @/server/db or @/env.ts.
  */
 import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { getDuckDB, closeDuckDB, duckExec, duckRun } from "@/lib/duckdb/client";
 import { syncPostgresToDuckDB } from "@/lib/duckdb/sync";
 import { ALL_VIEWS } from "@/lib/duckdb/views";
-import { db } from "@/server/db";
-import { sql } from "drizzle-orm";
+import { jobEnv } from "./_env";
+import { Pool } from "pg";
 
 /**
- * Cache a DuckDB view result into Supabase.
- * Uses UPSERT with 1-hour TTL.
+ * Cache a DuckDB view result into Supabase using raw pg.Pool.
  */
 async function cacheReport(
+  pool: Pool,
   companyId: string,
   reportType: string,
   data: unknown
 ): Promise<void> {
-  await db.execute(
-    sql`INSERT INTO cached_report_results (company_id, report_type, data, expires_at)
-        VALUES (${companyId}, ${reportType}, ${JSON.stringify(data)}::jsonb, now() + interval '1 hour')
-        ON CONFLICT (company_id, report_type)
-        DO UPDATE SET
-          data = EXCLUDED.data,
-          expires_at = EXCLUDED.expires_at,
-          created_at = now()`
+  await pool.query(
+    `INSERT INTO cached_report_results (company_id, report_type, data, expires_at)
+     VALUES ($1, $2, $3::jsonb, now() + interval '1 hour')
+     ON CONFLICT (company_id, report_type)
+     DO UPDATE SET
+       data = EXCLUDED.data,
+       expires_at = EXCLUDED.expires_at,
+       created_at = now()`,
+    [companyId, reportType, JSON.stringify(data)]
   );
 }
 
@@ -45,12 +48,8 @@ export const duckdbNightlySync = schedules.task({
   run: async () => {
     logger.info("Starting nightly DuckDB sync");
 
-    // Use service_role connection string (bypasses RLS — trusted internal process)
-    const pgConnStr = process.env.DATABASE_URL;
-    if (!pgConnStr) {
-      logger.error("DATABASE_URL not set — cannot sync");
-      return { status: "error", error: "DATABASE_URL not set", tables_synced: 0, results: [] };
-    }
+    const pgConnStr = jobEnv.SUPABASE_DB_URL;
+    const pool = new Pool({ connectionString: pgConnStr, max: 2 });
 
     try {
       // 1. Get DuckDB instance (ephemeral in-memory — loses all data on process end)
@@ -107,7 +106,7 @@ export const duckdbNightlySync = schedules.task({
         for (const vq of viewQueries) {
           try {
             const rows = await duckRun(duckDb, `${vq.query};`);
-            await cacheReport(companyId, vq.name, rows);
+            await cacheReport(pool, companyId, vq.name, rows);
           } catch (err) {
             logger.error(`Failed to cache ${vq.name} for ${companyId}`, {
               error: err instanceof Error ? err.message : String(err),
@@ -146,8 +145,8 @@ export const duckdbNightlySync = schedules.task({
         results: [],
       };
     } finally {
-      // DuckDB in-memory database loses all data here — by design
       closeDuckDB();
+      await pool.end();
     }
   },
 });
