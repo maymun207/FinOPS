@@ -28,7 +28,7 @@ jobs:
           SKIP_ENV_VALIDATION: '1'
 
       - name: Lint
-        run: npx eslint src/ || true
+        run: npx eslint src/
         env:
           SKIP_ENV_VALIDATION: '1'
 
