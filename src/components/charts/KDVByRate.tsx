@@ -24,7 +24,7 @@ interface Props {
 
 export default function KDVByRate({ data, height = 400 }: Props) {
   const option = useMemo(() => {
-    const rates = data.map((d) => `%${d.kdv_rate}`);
+    const rates = data.map((d) => `%${String(d.kdv_rate)}`);
 
     return {
       tooltip: {
@@ -42,19 +42,19 @@ export default function KDVByRate({ data, height = 400 }: Props) {
         {
           name: "Matrah",
           type: "bar" as const,
-          data: data.map((d) => Number(d.total_subtotal)),
+          data: data.map((d) => d.total_subtotal),
           itemStyle: { color: "#6366f1" },
         },
         {
           name: "KDV Tutarı",
           type: "bar" as const,
-          data: data.map((d) => Number(d.total_kdv)),
+          data: data.map((d) => d.total_kdv),
           itemStyle: { color: "#f59e0b" },
         },
         {
           name: "Genel Toplam",
           type: "bar" as const,
-          data: data.map((d) => Number(d.total_grand)),
+          data: data.map((d) => d.total_grand),
           itemStyle: { color: "#1B2B4B" },
         },
       ],

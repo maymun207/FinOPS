@@ -4,6 +4,13 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   // Existing Next.js configuration
   reactStrictMode: true,
+
+  // ESLint is enforced separately via `pnpm lint` in CI.
+  // Skipping during `next build` avoids duplicate runs and lets
+  // the build focus on compilation errors only.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default withSentryConfig(nextConfig, {

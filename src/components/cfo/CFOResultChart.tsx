@@ -29,7 +29,8 @@ interface Props {
 // ── KPI Card — Tremor Metric ────────────────────────────────────────
 
 function KPICard({ rows }: { rows: Record<string, unknown>[] }) {
-  const row = rows[0]!;
+  const row = rows[0];
+  if (!row) return null;
   const entries = Object.entries(row);
   const numEntry = entries.find(([, v]) => typeof v === "number");
   if (!numEntry) return null;
@@ -68,7 +69,8 @@ function KPICard({ rows }: { rows: Record<string, unknown>[] }) {
 
 function buildLineOption(rows: Record<string, unknown>[]) {
   const cols = inferColumns(rows);
-  const dateCol = cols.find((c) => c.type === "date")!;
+  const dateCol = cols.find((c) => c.type === "date");
+  if (!dateCol) return {};
   const numCols = cols.filter((c) => c.type === "numeric");
 
   return {
@@ -85,7 +87,7 @@ function buildLineOption(rows: Record<string, unknown>[]) {
       axisLabel: {
         color: "#64748b",
         formatter: (v: number) =>
-          Math.abs(v) >= 1000 ? `₺${(v / 1000).toFixed(0)}K` : `₺${v}`,
+          Math.abs(v) >= 1000 ? `₺${(v / 1000).toFixed(0)}K` : `₺${v.toFixed(0)}`,
       },
       splitLine: { lineStyle: { color: "#1e293b" } },
     },
@@ -95,7 +97,7 @@ function buildLineOption(rows: Record<string, unknown>[]) {
       data: rows.map((r) => Number(r[col.name] ?? 0)),
       smooth: true,
       itemStyle: { color: ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444"][i % 4] },
-      areaStyle: { color: `rgba(${[59, 130, 246][0]}, 0.08)` },
+      areaStyle: { color: `rgba(${String([59, 130, 246][0])}, 0.08)` },
     })),
   };
 }
@@ -104,7 +106,8 @@ function buildLineOption(rows: Record<string, unknown>[]) {
 
 function buildBarOption(rows: Record<string, unknown>[]) {
   const cols = inferColumns(rows);
-  const catCol = cols.find((c) => c.type === "string") ?? cols[0]!;
+  const catCol = cols.find((c) => c.type === "string") ?? cols[0];
+  if (!catCol) return {};
   const numCols = cols.filter((c) => c.type === "numeric");
 
   return {
@@ -121,7 +124,7 @@ function buildBarOption(rows: Record<string, unknown>[]) {
       axisLabel: {
         color: "#64748b",
         formatter: (v: number) =>
-          Math.abs(v) >= 1000 ? `₺${(v / 1000).toFixed(0)}K` : `₺${v}`,
+          Math.abs(v) >= 1000 ? `₺${(v / 1000).toFixed(0)}K` : `₺${v.toFixed(0)}`,
       },
       splitLine: { lineStyle: { color: "#1e293b" } },
     },

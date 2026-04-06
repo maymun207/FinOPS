@@ -38,17 +38,17 @@ const MONTH_NAMES = [
  *   - netFlow: line overlay for net position
  */
 export function transformCashFlowData(data: CashFlowData[]) {
-  const labels = data.map((d) => `${MONTH_NAMES[d.month - 1]} ${d.year}`);
-  const cashIn = data.map((d) => Number(d.cash_in));
-  const cashOut = data.map((d) => -Math.abs(Number(d.cash_out))); // negative for downward bars
-  const netFlow = data.map((d) => Number(d.net_flow));
+  const labels = data.map((d) => `${MONTH_NAMES[d.month - 1] ?? ""} ${String(d.year)}`);
+  const cashIn = data.map((d) => d.cash_in);
+  const cashOut = data.map((d) => -Math.abs(d.cash_out)); // negative for downward bars
+  const netFlow = data.map((d) => d.net_flow);
 
   // Waterfall helper: cumulative opening balance for each bar
   const helper: number[] = [];
   let cumulative = 0;
-  for (let i = 0; i < data.length; i++) {
+  for (const item of data) {
     helper.push(cumulative);
-    cumulative += Number(data[i]!.net_flow);
+    cumulative += item.net_flow;
   }
 
   return { labels, cashIn, cashOut, netFlow, helper };
@@ -67,8 +67,8 @@ export default function CashFlowWaterfall({ data, height = 400 }: Props) {
       tooltip: {
         trigger: "axis" as const,
         axisPointer: { type: "shadow" as const },
-        formatter: (params: Array<{ seriesName: string; value: number; axisValueLabel: string }>) => {
-          let html = `<strong>${params[0]?.axisValueLabel}</strong><br/>`;
+        formatter: (params: { seriesName: string; value: number; axisValueLabel: string }[]) => {
+          let html = `<strong>${params[0]?.axisValueLabel ?? ""}</strong><br/>`;
           for (const p of params) {
             if (p.seriesName === "base") continue; // hide transparent helper
             const color = p.seriesName === "Giriş" ? "#22c55e" : p.seriesName === "Çıkış" ? "#ef4444" : "#3b82f6";

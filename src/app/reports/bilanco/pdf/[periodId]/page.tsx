@@ -43,18 +43,19 @@ export default async function BilancoPDFPage({
         LIMIT 1`
   );
 
-  const rows = (cached.rows as Array<{ data: BilancoRow[] }>)[0]?.data ?? [];
+  const rows = (cached.rows as { data: BilancoRow[] }[])[0]?.data ?? [];
 
   const company = await db.execute(
     sql`SELECT name FROM companies LIMIT 1`
   );
-  const companyName = (company.rows as Array<{ name: string }>)[0]?.name ?? "Şirket";
+  const companyName = (company.rows as { name: string }[])[0]?.name ?? "Şirket";
 
   // Group by type
   const groups = new Map<string, BilancoRow[]>();
   for (const r of rows) {
     if (!groups.has(r.account_type)) groups.set(r.account_type, []);
-    groups.get(r.account_type)!.push(r);
+    const group = groups.get(r.account_type);
+    if (group) group.push(r);
   }
 
   return (
@@ -90,7 +91,7 @@ export default async function BilancoPDFPage({
         </div>
 
         {Array.from(groups.entries()).map(([type, groupRows]) => {
-          const subtotal = groupRows.reduce((s, r) => s + Number(r.balance), 0);
+          const subtotal = groupRows.reduce((s, r) => s + r.balance, 0);
           return (
             <div key={type} className="section">
               <div className="section-title">{TYPE_LABELS[type] ?? type}</div>
@@ -107,7 +108,7 @@ export default async function BilancoPDFPage({
                     <tr key={i}>
                       <td>{r.account_code}</td>
                       <td>{r.account_name ?? ""}</td>
-                      <td>{formatCurrency(Number(r.balance))}</td>
+                      <td>{formatCurrency(r.balance)}</td>
                     </tr>
                   ))}
                   <tr className="subtotal">

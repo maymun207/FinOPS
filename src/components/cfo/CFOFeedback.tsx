@@ -109,7 +109,7 @@ export function CFOFeedback({ question, sql, onApprove }: Props) {
       </button>
       <button
         id="cfo-thumbs-down"
-        onClick={() => setState("rejected")}
+        onClick={() => { setState("rejected"); }}
         style={{
           padding: "6px 14px",
           borderRadius: 6,

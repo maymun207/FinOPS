@@ -30,13 +30,13 @@ interface Props {
 
 export default function RevenueExpenseTrend({ data, height = 400 }: Props) {
   const option = useMemo(() => {
-    const labels = data.map((d) => `${MONTH_NAMES[d.month - 1]} ${d.year}`);
+    const labels = data.map((d) => `${MONTH_NAMES[d.month - 1] ?? ""} ${String(d.year)}`);
 
     return {
       tooltip: {
         trigger: "axis" as const,
-        formatter: (params: Array<{ seriesName: string; value: number; axisValueLabel: string }>) => {
-          let html = `<strong>${params[0]?.axisValueLabel}</strong><br/>`;
+        formatter: (params: { seriesName: string; value: number; axisValueLabel: string }[]) => {
+          let html = `<strong>${params[0]?.axisValueLabel ?? ""}</strong><br/>`;
           for (const p of params) {
             html += `${p.seriesName}: ₺${p.value.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}<br/>`;
           }
@@ -54,7 +54,7 @@ export default function RevenueExpenseTrend({ data, height = 400 }: Props) {
         {
           name: "Gelir",
           type: "line" as const,
-          data: data.map((d) => Number(d.cash_in)),
+          data: data.map((d) => d.cash_in),
           itemStyle: { color: "#22c55e" },
           areaStyle: { color: "rgba(34, 197, 94, 0.1)" },
           smooth: true,
@@ -62,7 +62,7 @@ export default function RevenueExpenseTrend({ data, height = 400 }: Props) {
         {
           name: "Gider",
           type: "line" as const,
-          data: data.map((d) => Number(d.cash_out)),
+          data: data.map((d) => d.cash_out),
           itemStyle: { color: "#ef4444" },
           areaStyle: { color: "rgba(239, 68, 68, 0.1)" },
           smooth: true,
@@ -70,7 +70,7 @@ export default function RevenueExpenseTrend({ data, height = 400 }: Props) {
         {
           name: "Net Kâr/Zarar",
           type: "line" as const,
-          data: data.map((d) => Number(d.net_flow)),
+          data: data.map((d) => d.net_flow),
           itemStyle: { color: "#3b82f6" },
           lineStyle: { width: 3, type: "dashed" as const },
           smooth: true,

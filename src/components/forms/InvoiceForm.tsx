@@ -14,7 +14,7 @@ import { trpc } from "@/lib/trpc/client";
 import {
   InvoiceLineItemsGrid,
   createEmptyLine,
-  type InvoiceLineRow,
+  type InvoiceLineRow as _InvoiceLineRow,
 } from "@/components/grids/InvoiceLineItemsGrid";
 import { formatTRY } from "@/components/grids/grid-types";
 
@@ -49,7 +49,7 @@ const labelStyle: React.CSSProperties = {
 export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(
-    new Date().toISOString().split("T")[0]!
+    (new Date().toISOString().split("T")[0] ?? "")
   );
   const [dueDate, setDueDate] = useState("");
   const [direction, setDirection] = useState<"inbound" | "outbound">(
@@ -57,7 +57,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
   );
   const [contactId, setContactId] = useState("");
   const [notes, setNotes] = useState("");
-  const [lineItems, setLineItems] = useState<InvoiceLineRow[]>([
+  const [lineItems, setLineItems] = useState([
     createEmptyLine(),
   ]);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +71,11 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
 
   const createMutation = trpc.invoice.create.useMutation({
     onSuccess: () => {
-      utils.invoice.list.invalidate();
-      utils.journal.list.invalidate();
+      void utils.invoice.list.invalidate();
+      void utils.journal.list.invalidate();
       onSuccess?.();
     },
-    onError: (err) => setError(err.message),
+    onError: (err) => { setError(err.message); },
   });
 
   // Compute totals from line items
@@ -93,7 +93,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
     return { subtotal, kdvTotal, grandTotal };
   }, [lineItems]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -171,7 +171,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
             id="invoice-number"
             type="text"
             value={invoiceNumber}
-            onChange={(e) => setInvoiceNumber(e.target.value)}
+            onChange={(e) => { setInvoiceNumber(e.target.value); }}
             style={inputStyle}
             placeholder="FTR-2026-001"
             required
@@ -187,7 +187,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
             id="invoice-date"
             type="date"
             value={invoiceDate}
-            onChange={(e) => setInvoiceDate(e.target.value)}
+            onChange={(e) => { setInvoiceDate(e.target.value); }}
             style={inputStyle}
             required
           />
@@ -202,7 +202,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
             id="invoice-due-date"
             type="date"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={(e) => { setDueDate(e.target.value); }}
             style={inputStyle}
           />
         </div>
@@ -223,9 +223,9 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
           <select
             id="invoice-direction"
             value={direction}
-            onChange={(e) =>
-              setDirection(e.target.value as "inbound" | "outbound")
-            }
+            onChange={(e) => {
+              setDirection(e.target.value as "inbound" | "outbound");
+            }}
             style={inputStyle}
           >
             <option value="outbound">Satış Faturası</option>
@@ -241,7 +241,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
           <select
             id="invoice-contact"
             value={contactId}
-            onChange={(e) => setContactId(e.target.value)}
+            onChange={(e) => { setContactId(e.target.value); }}
             style={inputStyle}
           >
             <option value="">— Seçiniz —</option>
@@ -262,7 +262,7 @@ export function InvoiceForm({ onSuccess }: InvoiceFormProps) {
         <textarea
           id="invoice-notes"
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => { setNotes(e.target.value); }}
           style={{
             ...inputStyle,
             minHeight: "60px",

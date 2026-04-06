@@ -27,7 +27,7 @@ const TDHP_GROUPS: Record<string, string> = {
 
 /** Transform flat expense rows into treemap hierarchy */
 export function transformExpenseData(data: ExpenseData[]) {
-  const groups = new Map<string, { name: string; children: Array<{ name: string; value: number }> }>();
+  const groups = new Map<string, { name: string; children: { name: string; value: number }[] }>();
 
   for (const d of data) {
     const digit = d.account_code.charAt(0);
@@ -36,10 +36,13 @@ export function transformExpenseData(data: ExpenseData[]) {
     if (!groups.has(digit)) {
       groups.set(digit, { name: groupLabel, children: [] });
     }
-    groups.get(digit)!.children.push({
-      name: `${d.account_code} — ${d.account_name ?? ""}`,
-      value: Math.abs(Number(d.net_amount)),
-    });
+    const group = groups.get(digit);
+    if (group) {
+      group.children.push({
+        name: `${d.account_code} — ${d.account_name ?? ""}`,
+        value: Math.abs(d.net_amount),
+      });
+    }
   }
 
   return Array.from(groups.values());
@@ -57,7 +60,7 @@ export default function ExpenseTreemap({ data, height = 400 }: Props) {
     return {
       tooltip: {
         formatter: (info: { name: string; value: number }) =>
-          `${info.name}<br/>₺${Number(info.value).toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`,
+          `${info.name}<br/>₺${info.value.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`,
       },
       series: [
         {

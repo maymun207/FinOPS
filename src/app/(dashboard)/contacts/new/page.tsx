@@ -25,7 +25,7 @@ export default function NewContactPage() {
       {/* Page header */}
       <div>
         <button
-          onClick={() => router.back()}
+          onClick={() => { router.back(); }}
           style={{
             background: "none",
             border: "none",
@@ -62,7 +62,7 @@ export default function NewContactPage() {
         </p>
       </div>
 
-      <ContactForm onSuccess={() => router.push("/dashboard/contacts")} />
+      <ContactForm onSuccess={() => { router.push("/dashboard/contacts"); }} />
     </div>
   );
 }

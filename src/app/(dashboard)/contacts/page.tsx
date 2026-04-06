@@ -85,7 +85,7 @@ export default function ContactsPage() {
             </span>
           )}
           <button
-            onClick={() => router.push("/dashboard/contacts/new")}
+            onClick={() => { router.push("/dashboard/contacts/new"); }}
             style={{
               padding: "0.625rem 1.25rem",
               borderRadius: "0.5rem",
@@ -110,7 +110,7 @@ export default function ContactsPage() {
           rows={rows}
           loading={isLoading}
           height="100%"
-          onRowClick={(id) => router.push(`/dashboard/contacts/${id}`)}
+          onRowClick={(id) => { router.push(`/dashboard/contacts/${id}`); }}
         />
       </div>
     </div>

@@ -43,7 +43,7 @@ export default function ImportPage() {
 
   // tRPC mutation
   const queueMutation = trpc.import.parseAndQueue.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (_result) => {
       router.push("/import/quarantine");
     },
   });
@@ -87,7 +87,7 @@ export default function ImportPage() {
 
   // Step 2: Profile loaded
   const handleProfileLoad = useCallback(
-    (profileMapping: Array<{ sourceCol: string; targetField: string }>) => {
+    (profileMapping: { sourceCol: string; targetField: string }[]) => {
       setMapping(profileMapping);
     },
     []
@@ -194,7 +194,7 @@ export default function ImportPage() {
                 ([key, label]) => (
                   <button
                     key={key}
-                    onClick={() => setImportType(key)}
+                    onClick={() => { setImportType(key); }}
                     style={{
                       padding: "10px 24px",
                       borderRadius: "8px",
@@ -233,7 +233,7 @@ export default function ImportPage() {
       {step === "mapping" && currentSheet && (
         <div>
           {/* Sheet selector (if multiple sheets) */}
-          {parseResult && parseResult.sheets.length > 1 && (
+          {parseResult.sheets.length > 1 && (
             <div style={{ marginBottom: "16px" }}>
               <label
                 style={{
@@ -246,7 +246,7 @@ export default function ImportPage() {
               </label>
               <select
                 value={sheetIndex}
-                onChange={(e) => setSheetIndex(parseInt(e.target.value, 10))}
+                onChange={(e) => { setSheetIndex(parseInt(e.target.value, 10)); }}
                 style={{
                   padding: "8px 12px",
                   borderRadius: "8px",
@@ -291,7 +291,7 @@ export default function ImportPage() {
             }}
           >
             <button
-              onClick={() => setStep("upload")}
+              onClick={() => { setStep("upload"); }}
               style={{
                 padding: "10px 24px",
                 borderRadius: "8px",
@@ -305,7 +305,7 @@ export default function ImportPage() {
               ← Geri
             </button>
             <button
-              onClick={() => setStep("preview")}
+              onClick={() => { setStep("preview"); }}
               disabled={mapping.filter((m) => m.targetField).length === 0}
               style={{
                 padding: "10px 24px",
@@ -406,7 +406,7 @@ export default function ImportPage() {
             }}
           >
             <button
-              onClick={() => setStep("mapping")}
+              onClick={() => { setStep("mapping"); }}
               style={{
                 padding: "10px 24px",
                 borderRadius: "8px",
@@ -436,7 +436,7 @@ export default function ImportPage() {
             >
               {queueMutation.isPending
                 ? "⏳ Gönderiliyor..."
-                : `✓ ${currentSheet.rows.length} Satırı İçe Aktar`}
+                : `✓ ${String(currentSheet.rows.length)} Satırı İçe Aktar`}
             </button>
           </div>
 

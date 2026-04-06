@@ -44,34 +44,3 @@ export async function generateColumnFingerprint(
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-
-/**
- * Synchronous fingerprint for Node.js (test environments).
- * Uses the same normalization logic but node:crypto for hashing.
- */
-export function generateColumnFingerprintSync(columns: string[]): string {
-  if (columns.length === 0) {
-    return "empty";
-  }
-
-  const normalized = columns
-    .map((col) => col.trim().toLowerCase())
-    .sort();
-
-  const payload = normalized.join("|");
-
-  // Use node:crypto if available, otherwise fallback to simple hash
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crypto = require("node:crypto");
-    return crypto.createHash("sha256").update(payload).digest("hex");
-  } catch {
-    // Fallback: simple string hash (not cryptographic, for tests only)
-    let hash = 0;
-    for (let i = 0; i < payload.length; i++) {
-      const char = payload.charCodeAt(i);
-      hash = ((hash << 5) - hash + char) | 0;
-    }
-    return Math.abs(hash).toString(16).padStart(8, "0");
-  }
-}

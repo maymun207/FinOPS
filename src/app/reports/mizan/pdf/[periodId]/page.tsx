@@ -44,21 +44,21 @@ export default async function MizanPDFPage({
         LIMIT 1`
   );
 
-  const rows = (cached.rows as Array<{ data: MizanRow[] }>)[0]?.data ?? [];
+  const rows = (cached.rows as { data: MizanRow[] }[])[0]?.data ?? [];
 
   // Company name
   const company = await db.execute(
     sql`SELECT name FROM companies LIMIT 1`
   );
-  const companyName = (company.rows as Array<{ name: string }>)[0]?.name ?? "Şirket";
+  const companyName = (company.rows as { name: string }[])[0]?.name ?? "Şirket";
 
-  const totalOpenDebit = rows.reduce((s, r) => s + Number(r.opening_debit), 0);
-  const totalOpenCredit = rows.reduce((s, r) => s + Number(r.opening_credit), 0);
-  const totalPeriodDebit = rows.reduce((s, r) => s + Number(r.period_debit), 0);
-  const totalPeriodCredit = rows.reduce((s, r) => s + Number(r.period_credit), 0);
-  const totalCloseDebit = rows.reduce((s, r) => s + Number(r.closing_debit), 0);
-  const totalCloseCredit = rows.reduce((s, r) => s + Number(r.closing_credit), 0);
-  const totalNet = rows.reduce((s, r) => s + Number(r.net_balance), 0);
+  const totalOpenDebit = rows.reduce((s, r) => s + r.opening_debit, 0);
+  const totalOpenCredit = rows.reduce((s, r) => s + r.opening_credit, 0);
+  const totalPeriodDebit = rows.reduce((s, r) => s + r.period_debit, 0);
+  const totalPeriodCredit = rows.reduce((s, r) => s + r.period_credit, 0);
+  const totalCloseDebit = rows.reduce((s, r) => s + r.closing_debit, 0);
+  const totalCloseCredit = rows.reduce((s, r) => s + r.closing_credit, 0);
+  const totalNet = rows.reduce((s, r) => s + r.net_balance, 0);
 
   return (
     <html lang="tr">
@@ -116,13 +116,13 @@ export default async function MizanPDFPage({
               <tr key={i}>
                 <td>{r.account_code}</td>
                 <td>{r.account_name ?? ""}</td>
-                <td>{formatCurrency(Number(r.opening_debit))}</td>
-                <td>{formatCurrency(Number(r.opening_credit))}</td>
-                <td>{formatCurrency(Number(r.period_debit))}</td>
-                <td>{formatCurrency(Number(r.period_credit))}</td>
-                <td>{formatCurrency(Number(r.closing_debit))}</td>
-                <td>{formatCurrency(Number(r.closing_credit))}</td>
-                <td>{formatCurrency(Number(r.net_balance))}</td>
+                <td>{formatCurrency(r.opening_debit)}</td>
+                <td>{formatCurrency(r.opening_credit)}</td>
+                <td>{formatCurrency(r.period_debit)}</td>
+                <td>{formatCurrency(r.period_credit)}</td>
+                <td>{formatCurrency(r.closing_debit)}</td>
+                <td>{formatCurrency(r.closing_credit)}</td>
+                <td>{formatCurrency(r.net_balance)}</td>
               </tr>
             ))}
             <tr className="total">

@@ -25,7 +25,7 @@ export function CFOChatInput({ onSubmit, disabled = false }: Props) {
     const el = textareaRef.current;
     if (el) {
       el.style.height = "auto";
-      el.style.height = Math.min(el.scrollHeight, 120) + "px";
+      el.style.height = `${Math.min(el.scrollHeight, 120).toString()}px`;
     }
   }, [value]);
 
@@ -62,7 +62,7 @@ export function CFOChatInput({ onSubmit, disabled = false }: Props) {
         ref={textareaRef}
         id="cfo-question-input"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => { setValue(e.target.value); }}
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Finansal sorunuzu yazın... (ör. 'Bu dönemde toplam KDV ne kadar?')"

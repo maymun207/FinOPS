@@ -53,43 +53,51 @@ export function CFOChatSession() {
     const runId = state.runId;
     const question = state.question;
 
-    pollingRef.current = setInterval(async () => {
-      try {
-        const result = await utils.cfo.getRunResult.fetch({ runId });
+    pollingRef.current = setInterval(() => {
+      void (async () => {
+        try {
+          const result = await utils.cfo.getRunResult.fetch({ runId });
 
-        if (result.status === "completed" && result.output) {
-          clearInterval(pollingRef.current!);
-          pollingRef.current = null;
+          if (result.status === "completed" && result.output) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+            }
+            pollingRef.current = null;
 
-          if (result.output.status === "rejected") {
-            inferenceRejected(
-              question,
-              result.output.reason ?? "Bilinmeyen hata",
-            );
-          } else {
-            inferenceDone({
-              question: result.output.question,
-              sql: result.output.sql,
-              explanation: result.output.explanation ?? "",
-              rows: result.output.rows,
-              rowCount: result.output.rowCount ?? 0,
-              latencyMs: result.output.latencyMs,
-            });
+            if (result.output.status === "rejected") {
+              inferenceRejected(
+                question,
+                result.output.reason ?? "Bilinmeyen hata",
+              );
+            } else {
+              inferenceDone({
+                question: result.output.question,
+                sql: result.output.sql,
+                explanation: result.output.explanation ?? "",
+                rows: result.output.rows,
+                rowCount: result.output.rowCount ?? 0,
+                latencyMs: result.output.latencyMs,
+              });
+            }
+          } else if (result.status === "failed") {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+            }
+            pollingRef.current = null;
+            error(result.error, question);
           }
-        } else if (result.status === "failed") {
-          clearInterval(pollingRef.current!);
+          // status === "running" → keep polling
+        } catch (err) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+          }
           pollingRef.current = null;
-          error(result.error ?? "Görev başarısız oldu", question);
+          error(
+            err instanceof Error ? err.message : "Bağlantı hatası",
+            question,
+          );
         }
-        // status === "running" → keep polling
-      } catch (err) {
-        clearInterval(pollingRef.current!);
-        pollingRef.current = null;
-        error(
-          err instanceof Error ? err.message : "Bağlantı hatası",
-          question,
-        );
-      }
+      })();
     }, 2000); // Poll every 2 seconds
 
     return () => {
