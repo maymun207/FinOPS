@@ -16,6 +16,7 @@ import { jobsRouter } from "./routers/jobs";
 import { reportsRouter } from "./routers/reports";
 import { exportsRouter } from "./routers/exports";
 import { cfoRouter } from "./routers/cfo";
+import { gibRouter } from "./routers/gib";
 
 /**
  * Root tRPC router — aggregates all sub-routers.
@@ -100,6 +101,9 @@ export const appRouter = createTRPCRouter({
 
   /** Virtual CFO — AI-powered financial assistant */
   cfo: cfoRouter,
+
+  /** GIB e-Fatura — electronic invoice submission + status */
+  gib: gibRouter,
 });
 
 export type AppRouter = typeof appRouter;
