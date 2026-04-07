@@ -18,7 +18,7 @@ import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { getDuckDB, closeDuckDB, duckExec, duckRun } from "@/lib/duckdb/client";
 import { syncPostgresToDuckDB } from "@/lib/duckdb/sync";
 import { ALL_VIEWS } from "@/lib/duckdb/views";
-import { jobEnv } from "./_env";
+import { getSupabaseEnv } from "./_env";
 import { Pool } from "pg";
 
 /**
@@ -47,8 +47,8 @@ export const duckdbNightlySync = schedules.task({
   cron: "0 2 * * *", // 05:00 Istanbul (UTC+3, no DST)
   run: async () => {
     logger.info("Starting nightly DuckDB sync");
-
-    const pgConnStr = jobEnv.SUPABASE_DB_URL;
+    const supabaseEnv = getSupabaseEnv();
+    const pgConnStr = supabaseEnv.SUPABASE_DB_URL;
     const pool = new Pool({ connectionString: pgConnStr, max: 2 });
 
     try {

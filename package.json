@@ -9,15 +9,15 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "lint:strict": "eslint . --max-warnings 0",
+    "trigger:dev": "npx trigger.dev@latest dev --env-file .env.local --skip-update-check",
+    "trigger:deploy": "npx trigger.dev@latest deploy",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "seed": "tsx supabase/seed/run-seed.ts",
-    "ci:check": "pnpm type-check && pnpm lint:strict && pnpm test",
-    "trigger:dev": "npx trigger.dev@latest dev"
-
+    "ci:check": "pnpm type-check && pnpm lint:strict && pnpm test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1024.0",

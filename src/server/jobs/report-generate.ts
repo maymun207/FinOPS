@@ -27,7 +27,7 @@ import {
   type KdvBeyanRow,
 } from "@/lib/excel/export-templates";
 import { generatePDF } from "@/lib/pdf/playwright-pdf";
-import { jobEnv } from "./_env";
+import { getJobEnv } from "./_env";
 import { Pool } from "pg";
 
 export type ReportType =
@@ -35,20 +35,6 @@ export type ReportType =
   | "balance_sheet"
   | "income_statement"
   | "kdv_summary";
-
-// ── S3 client for Cloudflare R2 ────────────────────────────────────
-
-const s3 = new S3Client({
-  region: "auto",
-  endpoint: `https://${jobEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: jobEnv.R2_ACCESS_KEY_ID,
-    secretAccessKey: jobEnv.R2_SECRET_ACCESS_KEY,
-  },
-});
-
-const R2_BUCKET = jobEnv.R2_BUCKET_NAME;
-const PRESIGNED_URL_TTL_SECONDS = 15 * 60; // 15 minutes
 
 // ── Report type → PDF route mapping ────────────────────────────────
 
@@ -97,6 +83,18 @@ export const reportGenerateTask = task({
       companyId: payload.companyId,
     });
 
+    // Initialise S3 + DB lazily inside run() — R2 keys may not exist at worker startup
+    const jobEnv = getJobEnv();
+    const s3 = new S3Client({
+      region: "auto",
+      endpoint: `https://${jobEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: jobEnv.R2_ACCESS_KEY_ID,
+        secretAccessKey: jobEnv.R2_SECRET_ACCESS_KEY,
+      },
+    });
+    const R2_BUCKET = jobEnv.R2_BUCKET_NAME;
+    const PRESIGNED_URL_TTL_SECONDS = 15 * 60;
     const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
 
     try {

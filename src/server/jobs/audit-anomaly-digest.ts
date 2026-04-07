@@ -16,7 +16,7 @@
 import { schedules, logger } from "@trigger.dev/sdk/v3";
 import { Pool } from "pg";
 import { log } from "@/lib/telemetry/axiom";
-import { jobEnv } from "./_env";
+import { getSupabaseEnv, getJobEnv } from "./_env";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -41,8 +41,9 @@ export const auditAnomalyDigestTask = schedules.task({
   cron: "0 9 * * *",
   run: async () => {
     const startTime = Date.now();
+    const supabaseEnv = getSupabaseEnv();
 
-    const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
+    const pool = new Pool({ connectionString: supabaseEnv.SUPABASE_DB_URL, max: 2 });
 
     try {
       logger.info("Starting audit anomaly digest");
@@ -185,8 +186,9 @@ export const auditAnomalyDigestTask = schedules.task({
         const html = buildDigestEmail(companyAnomalies);
 
         try {
-          const resendKey = jobEnv.RESEND_API_KEY;
+          const resendKey = process.env.RESEND_API_KEY;
           if (resendKey) {
+            void getJobEnv; // available when R2/Resend keys are configured
             const { Resend } = await import("resend");
             const resend = new Resend(resendKey);
             await resend.emails.send({

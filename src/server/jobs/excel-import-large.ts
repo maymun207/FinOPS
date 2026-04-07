@@ -28,21 +28,8 @@ import {
 import {
   journalImportRowSchema,
 } from "@/lib/schemas/journal-import.schema";
-import { jobEnv } from "./_env";
+import { getJobEnv } from "./_env";
 import { Pool } from "pg";
-
-// ── S3 client for Cloudflare R2 ────────────────────────────────────
-
-const s3 = new S3Client({
-  region: "auto",
-  endpoint: `https://${jobEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: jobEnv.R2_ACCESS_KEY_ID,
-    secretAccessKey: jobEnv.R2_SECRET_ACCESS_KEY,
-  },
-});
-
-const R2_BUCKET = jobEnv.R2_BUCKET_NAME;
 
 // ── Schema lookup ──────────────────────────────────────────────────
 
@@ -108,6 +95,17 @@ export const excelImportLargeTask = task({
   }) => {
     logger.info("Starting large file import", { r2Key: payload.r2Key });
 
+    // Initialise S3 + DB lazily inside run() — R2 keys may not exist at worker startup
+    const jobEnv = getJobEnv();
+    const s3 = new S3Client({
+      region: "auto",
+      endpoint: `https://${jobEnv.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: jobEnv.R2_ACCESS_KEY_ID,
+        secretAccessKey: jobEnv.R2_SECRET_ACCESS_KEY,
+      },
+    });
+    const R2_BUCKET = jobEnv.R2_BUCKET_NAME;
     const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
 
     try {

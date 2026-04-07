@@ -14,7 +14,7 @@
  * NOTE: Uses jobEnv + own pg.Pool — does NOT import @/server/db or @/env.ts.
  */
 import { schedules, logger } from "@trigger.dev/sdk/v3";
-import { jobEnv } from "./_env";
+import { getSupabaseEnv } from "./_env";
 import { Pool } from "pg";
 
 interface ReminderInvoice {
@@ -33,8 +33,8 @@ export const billingReminderDaily = schedules.task({
   cron: "0 5 * * *", // 08:00 Istanbul (UTC+3, no DST)
   run: async () => {
     logger.info("Starting daily billing reminder check");
-
-    const pool = new Pool({ connectionString: jobEnv.SUPABASE_DB_URL, max: 2 });
+    const supabaseEnv = getSupabaseEnv();
+    const pool = new Pool({ connectionString: supabaseEnv.SUPABASE_DB_URL, max: 2 });
 
     try {
       const today = new Date();
