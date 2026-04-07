@@ -260,10 +260,10 @@ export const vannaInferenceTask = task({
     const startTime = Date.now();
 
     // Guard: reject test runs or misconfigured triggers with empty payload
-    if (!payload?.question || payload.question.trim() === "") {
+    if (!payload.question || payload.question.trim() === "") {
       throw new Error("vanna-inference: payload.question is required — did you trigger this from the Test tab with no payload?");
     }
-    if (!payload?.companyId) {
+    if (!payload.companyId) {
       throw new Error("vanna-inference: payload.companyId is required");
     }
 
