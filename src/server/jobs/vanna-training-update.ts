@@ -48,6 +48,14 @@ export const vannaTrainingUpdateTask = task({
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
+    // Guard: reject test runs or misconfigured triggers with empty payload
+    if (!payload.question || payload.question.trim() === "") {
+      throw new Error("vanna-training-update: payload.question is required — did you trigger this from the Test tab with no payload?");
+    }
+    if (!payload.sql || payload.sql.trim() === "") {
+      throw new Error("vanna-training-update: payload.sql is required");
+    }
+
     logger.info("Generating embedding for training pair", {
       question: payload.question.substring(0, 100),
     });
