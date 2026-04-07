@@ -80,7 +80,23 @@ export function DashboardNav() {
       {/* Right: Org Switcher + User */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         <OrganizationSwitcher
-          appearance={{ baseTheme: dark }}
+          appearance={{
+            baseTheme: dark,
+            elements: {
+              organizationSwitcherTrigger: {
+                color: "#e2e8f0",
+              },
+              organizationSwitcherTriggerIcon: {
+                color: "#94a3b8",
+              },
+              organizationPreviewTextContainer: {
+                color: "#e2e8f0",
+              },
+              organizationPreviewMainIdentifier: {
+                color: "#e2e8f0",
+              },
+            },
+          }}
           afterCreateOrganizationUrl="/dashboard"
           afterSelectOrganizationUrl="/dashboard"
           createOrganizationMode="modal"
