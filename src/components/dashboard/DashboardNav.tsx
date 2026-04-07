@@ -85,15 +85,53 @@ export function DashboardNav() {
             variables: {
               colorBackground: "#1e293b",
               colorText: "#e2e8f0",
-              colorTextSecondary: "#94a3b8",
-              colorNeutral: "#334155",
+              colorTextSecondary: "#cbd5e1",
+              colorNeutral: "#94a3b8",
             },
             elements: {
+              // Trigger button in nav
               organizationSwitcherTrigger: {
                 color: "#e2e8f0",
                 padding: "0.25rem 0.5rem",
                 borderRadius: "0.375rem",
-                "&:hover": { backgroundColor: "#334155" },
+              },
+              // Popup card container
+              organizationSwitcherPopoverCard: {
+                backgroundColor: "#1e293b",
+                border: "1px solid #334155",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              },
+              // Org name text (e.g. "Test Sirketi")
+              organizationPreviewMainIdentifier: {
+                color: "#e2e8f0",
+                opacity: 1,
+              },
+              // Role text (e.g. "Admin")
+              organizationPreviewSecondaryIdentifier: {
+                color: "#94a3b8",
+                opacity: 1,
+              },
+              // "Create organization" button text
+              organizationSwitcherPopoverActionButton__createOrganization: {
+                color: "#e2e8f0",
+                opacity: 1,
+              },
+              organizationSwitcherPopoverActionButtonText: {
+                color: "#e2e8f0",
+                opacity: 1,
+              },
+              organizationSwitcherPopoverActionButtonIcon: {
+                color: "#94a3b8",
+                opacity: 1,
+              },
+              // "Manage" button
+              organizationSwitcherPreviewButton: {
+                color: "#e2e8f0",
+                opacity: 1,
+              },
+              // Footer "Secured by Clerk"
+              organizationSwitcherPopoverFooter: {
+                borderTop: "1px solid #334155",
               },
             },
           }}
