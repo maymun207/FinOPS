@@ -159,3 +159,4 @@ describe.skipIf(!DB_URL)("RLS — cross-company data isolation", () => {
     expect(result.rows.length).toBeGreaterThanOrEqual(2);
   });
 });
+

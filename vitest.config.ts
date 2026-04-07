@@ -10,6 +10,9 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["tests/e2e/**"],
+    // Integration tests hit Supabase over TCP — allow enough time for round trips
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     env: {
       SKIP_ENV_VALIDATION: "1",
     },

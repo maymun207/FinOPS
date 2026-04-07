@@ -106,7 +106,7 @@ describe.skipIf(!DB_URL)("journal_entry_lines balance constraint", () => {
     `);
 
     expect(result.rows).toHaveLength(2);
-  });
+  }, 15_000);
 
   it("INSERT first line only (deferred trigger) succeeds; commit unbalanced throws", async () => {
     const { companyId, accountId1, accountId2, jeId } = await setupJournalEntry();

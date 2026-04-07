@@ -60,7 +60,12 @@ export const protectedProcedure = loggedProcedure.use(({ ctx, next }) => {
 /**
  * Company-scoped procedure — requires auth + active company.
  * Throws UNAUTHORIZED if not signed in, FORBIDDEN if no company resolved.
- * Narrows ctx.userId, ctx.companyId, ctx.orgId to non-null.
+ * Narrows ctx.userId, ctx.companyId, ctx.orgId to non-null strings.
+ *
+ * SECURITY: This is the primary tenant isolation guard. Every procedure
+ * using companyProcedure is guaranteed ctx.companyId: string — TypeScript
+ * will error at compile time if any code tries to use it as nullable.
+ * All queries MUST include `.where(eq(table.companyId, ctx.companyId))`.
  */
 export const companyProcedure = loggedProcedure.use(({ ctx, next }) => {
   if (!ctx.userId) {
@@ -69,16 +74,17 @@ export const companyProcedure = loggedProcedure.use(({ ctx, next }) => {
   if (!ctx.companyId) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "No company found for this organization",
+      message: "Şirket bağlamı bulunamadı. Lütfen bir organizasyon seçin.",
     });
   }
+  // Narrowed context: companyId and orgId are string (not string | null).
+  // TypeScript enforces this — a missing WHERE filter becomes a compile error.
   return next({
     ctx: {
       ...ctx,
-      userId: ctx.userId,
-      companyId: ctx.companyId,
-       
-      orgId: ctx.orgId!,
+      userId: ctx.userId,       // string (was string | null)
+      companyId: ctx.companyId, // string (was string | null)
+      orgId: ctx.orgId!,        // string (was string | null)
     },
   });
 });

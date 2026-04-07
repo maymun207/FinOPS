@@ -154,7 +154,7 @@ describe.skipIf(!DB_URL)(
 
       // coa.list uses companyProcedure → should throw FORBIDDEN
       await expect(caller.coa.list()).rejects.toThrow(
-        "No company found for this organization"
+        "Şirket bağlamı bulunamadı. Lütfen bir organizasyon seçin."
       );
     });
 
