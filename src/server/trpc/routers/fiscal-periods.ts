@@ -114,7 +114,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
         .where(eq(fiscalPeriods.id, input.periodId))
         .returning();
 
-       
+
       return updated[0]!;
     }),
 
@@ -161,7 +161,34 @@ export const fiscalPeriodsRouter = createTRPCRouter({
         .where(eq(fiscalPeriods.id, input.periodId))
         .returning();
 
-       
+
       return updated[0]!;
     }),
+
+  /**
+* Create a new fiscal period for the current company.
+*/
+  create: companyProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, "Dönem adı zorunludur"),
+        startDate: z.string().min(1, "Başlangıç tarihi zorunludur"),
+        endDate: z.string().min(1, "Bitiş tarihi zorunludur"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const inserted = await ctx.db
+        .insert(fiscalPeriods)
+        .values({
+          companyId: ctx.companyId,
+          name: input.name,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          isClosed: false,
+        })
+        .returning();
+
+      return inserted[0]!;
+    }),
+
 });
