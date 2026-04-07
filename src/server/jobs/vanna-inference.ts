@@ -258,6 +258,15 @@ export const vannaInferenceTask = task({
     userId: string;
   }) => {
     const startTime = Date.now();
+
+    // Guard: reject test runs or misconfigured triggers with empty payload
+    if (!payload?.question || payload.question.trim() === "") {
+      throw new Error("vanna-inference: payload.question is required — did you trigger this from the Test tab with no payload?");
+    }
+    if (!payload?.companyId) {
+      throw new Error("vanna-inference: payload.companyId is required");
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
@@ -268,7 +277,7 @@ export const vannaInferenceTask = task({
     logger.info("Embedding generated", { dimensions: embedding.length });
 
     // 2. Find similar training pairs via pgvector
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL });
     try {
       const similar = await findSimilarQuestions(
         embedding,
