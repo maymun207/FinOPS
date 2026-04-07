@@ -4,6 +4,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import Decimal from "decimal.js";
 import { createTRPCRouter, companyProcedure } from "../trpc";
+import { type db } from "@/server/db/client";
 import {
   invoices,
   invoiceLineItems,
@@ -346,7 +347,7 @@ export const invoicesRouter = createTRPCRouter({
 /**
  * Transaction-aware DB handle. Uses `tx` (transaction client), not `db`.
  */
-type TxHandle = Parameters<Parameters<typeof import("@/server/db/client").db.transaction>[0]>[0];
+type TxHandle = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 interface JournalCtx {
   tx: TxHandle;

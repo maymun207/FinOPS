@@ -77,7 +77,7 @@ export const companyProcedure = loggedProcedure.use(({ ctx, next }) => {
       ...ctx,
       userId: ctx.userId,
       companyId: ctx.companyId,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       orgId: ctx.orgId!,
     },
   });

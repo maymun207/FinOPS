@@ -46,7 +46,7 @@ export async function createTRPCContext(opts: { headers: Headers }) {
           .returning({ id: companies.id });
 
         companyId = inserted[0]?.id ?? null;
-        console.log(`✅ Auto-provisioned company for org ${orgId}: ${companyId}`);
+        console.log(`✅ Auto-provisioned company for org ${orgId}: ${companyId ?? "unknown"}`);
       } catch (err) {
         console.error("❌ Failed to auto-provision company:", err);
       }

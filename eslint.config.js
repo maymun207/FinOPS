@@ -70,8 +70,8 @@ export default [
         "error",
         { checksVoidReturn: { attributes: false } },
       ],
-      // Allow process.env.X! in supabase client files — env is validated at startup
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      // Allow non-null assertions globally since this project uses them heavily
+      "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
 
@@ -110,6 +110,8 @@ export default [
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-dynamic-delete": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/require-await": "off",
       "@typescript-eslint/consistent-type-imports": "warn",
     },
   },

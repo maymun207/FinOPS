@@ -12,8 +12,7 @@
  */
 import { log, type FinOpsLog } from "@/lib/telemetry/axiom";
 import { withSpan } from "@/lib/telemetry/otel";
-import { // eslint-disable-next-line @typescript-eslint/no-deprecated
-experimental_standaloneMiddleware } from "@trpc/server";
+import { experimental_standaloneMiddleware } from "@trpc/server";
 import { type TRPCContext } from "../trpc";
 
 /**

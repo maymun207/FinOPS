@@ -1,6 +1,5 @@
 // src/lib/supabase/client.ts
 import { createBrowserClient } from "@supabase/ssr";
-import { useAuth } from "@clerk/nextjs";
 import { env } from "@/env";
 
 export function createClient() {

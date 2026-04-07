@@ -4,6 +4,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import Decimal from "decimal.js";
 import { createTRPCRouter, companyProcedure } from "../trpc";
+import { type db } from "@/server/db/client";
 import {
   payments,
   invoices,
@@ -208,7 +209,7 @@ export const paymentsRouter = createTRPCRouter({
 // ── Internal helpers ────────────────────────────────────────────────
 
 interface PaymentJournalCtx {
-  tx: Parameters<Parameters<typeof import("@/server/db/client").db.transaction>[0]>[0];
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0];
   companyId: string;
   userId: string;
 }

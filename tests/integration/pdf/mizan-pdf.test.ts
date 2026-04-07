@@ -81,19 +81,19 @@ describe("Playwright PDF Generation", () => {
     }
 
     expect(pdfBuffer).toBeInstanceOf(Buffer);
-    expect(pdfBuffer!.length).toBeGreaterThan(0);
+    expect(pdfBuffer.length).toBeGreaterThan(0);
 
     // PDF magic bytes: %PDF-1. → 0x25 0x50 0x44 0x46 0x2D 0x31 0x2E
-    expect(pdfBuffer![0]).toBe(0x25); // %
-    expect(pdfBuffer![1]).toBe(0x50); // P
-    expect(pdfBuffer![2]).toBe(0x44); // D
-    expect(pdfBuffer![3]).toBe(0x46); // F
-    expect(pdfBuffer![4]).toBe(0x2d); // -
-    expect(pdfBuffer![5]).toBe(0x31); // 1
-    expect(pdfBuffer![6]).toBe(0x2e); // .
+    expect(pdfBuffer[0]).toBe(0x25); // %
+    expect(pdfBuffer[1]).toBe(0x50); // P
+    expect(pdfBuffer[2]).toBe(0x44); // D
+    expect(pdfBuffer[3]).toBe(0x46); // F
+    expect(pdfBuffer[4]).toBe(0x2d); // -
+    expect(pdfBuffer[5]).toBe(0x31); // 1
+    expect(pdfBuffer[6]).toBe(0x2e); // .
 
     // Also verify as string
-    const header = pdfBuffer!.subarray(0, 8).toString("ascii");
+    const header = pdfBuffer.subarray(0, 8).toString("ascii");
     expect(header).toMatch(/^%PDF-1\./);
   }, 30000);
 

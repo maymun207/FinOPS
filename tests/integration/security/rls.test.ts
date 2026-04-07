@@ -150,7 +150,7 @@ describe.skipIf(!DB_URL)("RLS — cross-company data isolation", () => {
       WHERE company_id IN (${companyA.id}, ${companyB.id})
     `);
 
-    const returnedCompanyIds = (result.rows as Record<string, unknown>[]).map(
+    const returnedCompanyIds = (result.rows).map(
       (r) => r["company_id"]
     );
 

@@ -114,7 +114,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
         .where(eq(fiscalPeriods.id, input.periodId))
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       return updated[0]!;
     }),
 
@@ -161,7 +161,7 @@ export const fiscalPeriodsRouter = createTRPCRouter({
         .where(eq(fiscalPeriods.id, input.periodId))
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       return updated[0]!;
     }),
 });
