@@ -82,18 +82,18 @@ export function DashboardNav() {
         <OrganizationSwitcher
           appearance={{
             baseTheme: dark,
+            variables: {
+              colorBackground: "#1e293b",
+              colorText: "#e2e8f0",
+              colorTextSecondary: "#94a3b8",
+              colorNeutral: "#334155",
+            },
             elements: {
               organizationSwitcherTrigger: {
                 color: "#e2e8f0",
-              },
-              organizationSwitcherTriggerIcon: {
-                color: "#94a3b8",
-              },
-              organizationPreviewTextContainer: {
-                color: "#e2e8f0",
-              },
-              organizationPreviewMainIdentifier: {
-                color: "#e2e8f0",
+                padding: "0.25rem 0.5rem",
+                borderRadius: "0.375rem",
+                "&:hover": { backgroundColor: "#334155" },
               },
             },
           }}
