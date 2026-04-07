@@ -41,7 +41,7 @@ export default function InvoiceDetailPage() {
     );
 
     const deleteMutation = trpc.invoice.delete.useMutation({
-        onSuccess: () => router.push("/invoices"),
+        onSuccess: () => { router.push("/invoices"); },
     });
 
     const formatCurrency = (amount: string | null, currency = "TRY") => {
@@ -74,7 +74,7 @@ export default function InvoiceDetailPage() {
             <div style={{ padding: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
                 <p style={{ color: "#ef4444" }}>Fatura bulunamadı.</p>
                 <button
-                    onClick={() => router.push("/invoices")}
+                    onClick={() => { router.push("/invoices"); }}
                     style={{ marginTop: "1rem", color: "#3b82f6", background: "none", border: "none", cursor: "pointer", fontSize: "0.875rem" }}
                 >
                     ← Faturalara dön
@@ -91,7 +91,7 @@ export default function InvoiceDetailPage() {
             {/* Back button + Header */}
             <div style={{ marginBottom: "1.5rem" }}>
                 <button
-                    onClick={() => router.push("/invoices")}
+                    onClick={() => { router.push("/invoices"); }}
                     style={{
                         background: "none", border: "none", color: "#64748b",
                         fontSize: "0.8125rem", cursor: "pointer", padding: "0",
@@ -136,7 +136,7 @@ export default function InvoiceDetailPage() {
                             <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                                 <span style={{ color: "#f87171", fontSize: "0.8125rem" }}>Emin misiniz?</span>
                                 <button
-                                    onClick={() => deleteMutation.mutate({ id })}
+                                    onClick={() => { deleteMutation.mutate({ id }); }}
                                     disabled={deleteMutation.isPending}
                                     style={{
                                         padding: "0.5rem 1rem", borderRadius: "0.375rem",
@@ -147,7 +147,7 @@ export default function InvoiceDetailPage() {
                                     {deleteMutation.isPending ? "Siliniyor..." : "Evet, Sil"}
                                 </button>
                                 <button
-                                    onClick={() => setConfirmDelete(false)}
+                                    onClick={() => { setConfirmDelete(false); }}
                                     style={{
                                         padding: "0.5rem 1rem", borderRadius: "0.375rem",
                                         border: "1px solid #334155", backgroundColor: "transparent",
@@ -159,7 +159,7 @@ export default function InvoiceDetailPage() {
                             </div>
                         ) : (
                             <button
-                                onClick={() => setConfirmDelete(true)}
+                                onClick={() => { setConfirmDelete(true); }}
                                 style={{
                                     padding: "0.5rem 1rem", borderRadius: "0.375rem",
                                     border: "1px solid #334155", backgroundColor: "transparent",
