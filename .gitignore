@@ -65,3 +65,4 @@ supabase/functions/.cache/
 *.turbo
 ~$*
 .env*.local
+*.tsbuildinfo
