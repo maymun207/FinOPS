@@ -14,6 +14,7 @@ import {
   teardownTestDb,
   getTestDbUrl,
   validateConnection,
+  expectDbError,
 } from "../setup";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schemaTypes from "@/server/db/schema";
@@ -78,12 +79,13 @@ describe.skipIf(!DB_URL)("fiscal period lock trigger", () => {
   it("rejects journal entry creation in a closed fiscal period", async () => {
     const { companyId, fpId } = await setupCompanyAndPeriod(true);
 
-    await expect(
+    await expectDbError(
       db.execute(sql`
         INSERT INTO journal_entries (company_id, fiscal_period_id, entry_date, source_type)
         VALUES (${companyId}, ${fpId}, '2026-02-01', 'manual')
-      `)
-    ).rejects.toThrow(/closed/i);
+      `),
+      /closed/i
+    );
   });
 
   it("rejects updating a journal entry to a closed fiscal period", async () => {
@@ -106,13 +108,14 @@ describe.skipIf(!DB_URL)("fiscal period lock trigger", () => {
     const jeId = (je.rows[0] as Record<string, unknown>)["id"] as string;
 
     // Try to move it to the closed period
-    await expect(
+    await expectDbError(
       db.execute(sql`
         UPDATE journal_entries
         SET fiscal_period_id = ${closedFpId}
         WHERE id = ${jeId}
-      `)
-    ).rejects.toThrow(/closed/i);
+      `),
+      /closed/i
+    );
   });
 
   it("blocks new entries after closing a previously open period", async () => {
@@ -133,12 +136,13 @@ describe.skipIf(!DB_URL)("fiscal period lock trigger", () => {
     `);
 
     // Second entry — should fail
-    await expect(
+    await expectDbError(
       db.execute(sql`
         INSERT INTO journal_entries (company_id, fiscal_period_id, entry_date, source_type)
         VALUES (${companyId}, ${fpId}, '2026-02-15', 'manual')
-      `)
-    ).rejects.toThrow(/closed/i);
+      `),
+      /closed/i
+    );
   });
 
   it("existing entries are NOT affected when period closes (only new inserts blocked)", async () => {

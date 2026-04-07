@@ -45,14 +45,8 @@ describe.skipIf(!DB_URL)("TDHP seed — data integrity", () => {
   });
 
   afterAll(async () => {
-    // Cleanup template rows
-    await db.execute(
-      sql`DELETE FROM audit_log WHERE table_name = 'chart_of_accounts'
-          AND company_id IS NULL`
-    );
-    await db.execute(
-      sql`DELETE FROM chart_of_accounts WHERE company_id IS NULL`
-    );
+    // TDHP accounts are permanent seed data (company_id IS NULL) —
+    // do NOT delete them; they may be referenced by production journal entries.
     await teardownTestDb();
   });
 

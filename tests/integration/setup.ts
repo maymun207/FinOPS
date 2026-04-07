@@ -63,7 +63,7 @@ export async function validateConnection(): Promise<boolean> {
   try {
     const testPool = new Pool({
       ...buildPoolConfig(dbUrl),
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
     });
     await testPool.query("SELECT 1");
     await testPool.end();
@@ -90,7 +90,7 @@ export function setupTestDb() {
   pool = new Pool(buildPoolConfig(dbUrl));
   const testDb = drizzle(pool, { schema });
 
-  return { db: testDb };
+  return { db: testDb, pool };
 }
 
 /**
@@ -110,4 +110,55 @@ export async function teardownTestDb() {
     await pool.end();
     pool = null;
   }
+}
+
+/**
+ * Asserts that a DB promise rejects with an error whose message (or cause message)
+ * matches the given pattern.
+ *
+ * Drizzle wraps Postgres errors as:
+ *   message: "Failed query: <sql>"
+ *   cause:   { message: "error: <PG message>" }
+ *
+ * This helper checks both the top-level message and the cause message.
+ */
+export async function expectDbError(
+  promise: Promise<unknown>,
+  pattern: RegExp
+): Promise<void> {
+  let threw = false;
+  let errorMsg = "(no error)";
+  try {
+    await promise;
+  } catch (err: unknown) {
+    threw = true;
+    if (err instanceof Error) {
+      const topMsg = err.message ?? "";
+      const causeMsg =
+        err.cause instanceof Error ? (err.cause.message ?? "") : "";
+      const combinedMsg = `${topMsg}\n${causeMsg}`;
+      if (!pattern.test(combinedMsg)) {
+        throw new Error(
+          `Expected error matching ${pattern} but got: ${combinedMsg.substring(0, 300)}`
+        );
+      }
+    } else {
+      throw new Error(`Expected error but got non-Error: ${String(err)}`);
+    }
+    return;
+  }
+  if (!threw) {
+    throw new Error(`Expected DB operation to throw matching ${pattern} but it resolved.`);
+  }
+}
+
+/**
+ * Converts a raw DB timestamp value (string or Date) to a JS Date.
+ * Needed because Drizzle db.execute() with raw SQL returns timestamps as
+ * strings when using the Supabase direct connection.
+ */
+export function toDbDate(val: unknown): Date {
+  if (val instanceof Date) return val;
+  if (typeof val === "string") return new Date(val);
+  throw new Error(`Expected Date or string, got ${typeof val}: ${String(val)}`);
 }

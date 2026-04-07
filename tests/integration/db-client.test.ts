@@ -27,7 +27,7 @@ describe.skipIf(!DB_URL)("db client — typed queries", () => {
   let testCompanyId: string;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString: DB_URL });
+    pool = new Pool({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
     db = drizzle(pool, { schema });
 
     // Create a test company

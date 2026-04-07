@@ -18,8 +18,10 @@ import {
   teardownTestDb,
   getTestDbUrl,
   validateConnection,
+  expectDbError,
 } from "../setup";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { Pool } from "pg";
 import type * as schemaTypes from "@/server/db/schema";
 
 await validateConnection();
@@ -27,11 +29,13 @@ const DB_URL = getTestDbUrl();
 
 describe.skipIf(!DB_URL)("journal_entry_lines balance constraint", () => {
   let db: NodePgDatabase<typeof schemaTypes>;
+  let pgPool: Pool;
   const companyIds: string[] = [];
 
   beforeAll(() => {
     const setup = setupTestDb();
     db = setup.db;
+    pgPool = setup.pool;
   });
 
   afterEach(async () => {
@@ -110,16 +114,30 @@ describe.skipIf(!DB_URL)("journal_entry_lines balance constraint", () => {
     // With DEFERRABLE INITIALLY DEFERRED, inserting the first line
     // within an explicit transaction succeeds — check defers to COMMIT.
     // When we try to commit with only one side, it must throw.
-    await expect(
-      db.execute(sql`
-        BEGIN;
-        INSERT INTO journal_entry_lines (journal_entry_id, company_id, account_id, debit_amount, credit_amount)
-        VALUES (${jeId}, ${companyId}, ${accountId1}, 500.00, 0);
-        INSERT INTO journal_entry_lines (journal_entry_id, company_id, account_id, debit_amount, credit_amount)
-        VALUES (${jeId}, ${companyId}, ${accountId2}, 0, 300.00);
-        COMMIT;
-      `)
-    ).rejects.toThrow(/unbalanced/i);
+    // NOTE: must use raw pg Client because Drizzle's db.execute() doesn't
+    // support multi-statement strings with explicit BEGIN/COMMIT.
+    const client = await pgPool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `INSERT INTO journal_entry_lines (journal_entry_id, company_id, account_id, debit_amount, credit_amount)
+         VALUES ($1, $2, $3, 500.00, 0)`,
+        [jeId, companyId, accountId1]
+      );
+      await client.query(
+        `INSERT INTO journal_entry_lines (journal_entry_id, company_id, account_id, debit_amount, credit_amount)
+         VALUES ($1, $2, $3, 0, 300.00)`,
+        [jeId, companyId, accountId2]
+      );
+      await expectDbError(
+        client.query("COMMIT"),
+        /unbalanced/i
+      );
+    } finally {
+      // If COMMIT threw, the transaction is already rolled back — just release
+      try { await client.query("ROLLBACK"); } catch { /* already done */ }
+      client.release();
+    }
   });
 
   it("rejects unbalanced journal entry lines on commit", async () => {
@@ -127,14 +145,15 @@ describe.skipIf(!DB_URL)("journal_entry_lines balance constraint", () => {
 
     // DEFERRABLE trigger: balance check happens at commit time.
     // Inserting unbalanced lines will fail when the implicit transaction commits.
-    await expect(
+    await expectDbError(
       db.execute(sql`
         INSERT INTO journal_entry_lines (journal_entry_id, company_id, account_id, debit_amount, credit_amount)
         VALUES
           (${jeId}, ${companyId}, ${accountId1}, 1000.00, 0),
           (${jeId}, ${companyId}, ${accountId2}, 0, 500.00)
-      `)
-    ).rejects.toThrow(/unbalanced/i);
+      `),
+      /unbalanced/i
+    );
   });
 
   it("rejects an update that unbalances an existing entry", async () => {
@@ -151,12 +170,13 @@ describe.skipIf(!DB_URL)("journal_entry_lines balance constraint", () => {
     const lineId = (ins.rows[0] as Record<string, unknown>)["id"] as string;
 
     // Update debit to create imbalance — should fail at commit
-    await expect(
+    await expectDbError(
       db.execute(sql`
         UPDATE journal_entry_lines
         SET debit_amount = 999.00
         WHERE id = ${lineId}
-      `)
-    ).rejects.toThrow(/unbalanced/i);
+      `),
+      /unbalanced/i
+    );
   });
 });

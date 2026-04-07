@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { sql } from "drizzle-orm";
-import { setupTestDb, teardownTestDb, getTestDbUrl, validateConnection } from "../setup";
+import { setupTestDb, teardownTestDb, getTestDbUrl, validateConnection, expectDbError, toDbDate } from "../setup";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schemaTypes from "@/server/db/schema";
 
@@ -66,17 +66,18 @@ describe.skipIf(!DB_URL)("fiscal_periods schema", () => {
     `);
     const closed = upd.rows[0] as Record<string, unknown>;
     expect(closed["is_closed"]).toBe(true);
-    expect(closed["closed_at"]).toBeInstanceOf(Date);
+    expect(toDbDate(closed["closed_at"]).getTime()).not.toBeNaN();
     expect(closed["closed_by"]).toBe("user_clerk_123");
   });
 
   it("enforces FK constraint — inserting with invalid company_id fails", async () => {
-    await expect(
+    await expectDbError(
       db.execute(sql`
         INSERT INTO fiscal_periods (company_id, name, start_date, end_date)
         VALUES ('00000000-0000-0000-0000-000000000000', 'Invalid', '2026-01-01', '2026-03-31')
-      `)
-    ).rejects.toThrow(/foreign key|violates/i);
+      `),
+      /foreign key|violates/i
+    );
   });
 
   it("cascades delete — deleting a company removes its periods", async () => {

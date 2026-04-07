@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { sql } from "drizzle-orm";
-import { setupTestDb, teardownTestDb, getTestDbUrl, validateConnection } from "../setup";
+import { setupTestDb, teardownTestDb, getTestDbUrl, validateConnection, toDbDate } from "../setup";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schemaTypes from "@/server/db/schema";
 
@@ -54,8 +54,8 @@ describe.skipIf(!DB_URL)("companies schema", () => {
     expect(inserted["tax_id"]).toBe("1234567890");
     expect(inserted["base_currency"]).toBe("USD");
     expect(inserted["e_fatura_enabled"]).toBe(true);
-    expect(inserted["created_at"]).toBeInstanceOf(Date);
-    expect(inserted["updated_at"]).toBeInstanceOf(Date);
+    expect(toDbDate(inserted["created_at"]).getTime()).not.toBeNaN();
+    expect(toDbDate(inserted["updated_at"]).getTime()).not.toBeNaN();
 
     // SELECT by ID
     const selectResult = await db.execute(
