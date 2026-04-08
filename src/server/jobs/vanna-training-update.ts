@@ -65,7 +65,10 @@ export const vannaTrainingUpdateTask = task({
     const vectorStr = `[${embedding.join(",")}]`;
 
     // 2. Insert into vanna_training
-    const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL });
+    const pool = new Pool({
+      connectionString: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // required for Supabase Supavisor pooler
+    });
     try {
       const result = await pool.query<{ id: string }>(
         `INSERT INTO vanna_training (company_id, question, sql, embedding, was_user_approved)

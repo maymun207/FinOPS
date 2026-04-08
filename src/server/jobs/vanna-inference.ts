@@ -277,7 +277,10 @@ export const vannaInferenceTask = task({
     logger.info("Embedding generated", { dimensions: embedding.length });
 
     // 2. Find similar training pairs via pgvector
-    const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL });
+    const pool = new Pool({
+      connectionString: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // required for Supabase Supavisor pooler
+    });
     try {
       const similar = await findSimilarQuestions(
         embedding,
