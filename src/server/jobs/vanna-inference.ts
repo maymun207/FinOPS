@@ -141,25 +141,47 @@ async function generateEmbedding(text: string, apiKey: string): Promise<number[]
   return data.embedding.values;
 }
 
+/**
+ * Retry wrapper for transient Gemini API errors (429, 500, 502, 503).
+ * Uses exponential backoff: 1s → 2s → 4s (3 attempts max).
+ */
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  maxAttempts = 3,
+): Promise<Response> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(url, init);
+    if (response.ok || attempt === maxAttempts) return response;
+    const retryable = [429, 500, 502, 503].includes(response.status);
+    if (!retryable) return response; // non-retryable error
+    const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+    console.warn(`Gemini API ${String(response.status)} — retrying in ${String(delay)}ms (attempt ${String(attempt)}/${String(maxAttempts)})`);
+    await new Promise((r) => setTimeout(r, delay));
+  }
+  // unreachable but satisfies TS
+  throw new Error("fetchWithRetry: exhausted attempts");
+}
+
 async function generateSQL(
   prompt: string,
   apiKey: string,
 ): Promise<string> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1024,
-        },
-      }),
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 1024,
     },
-  );
+  });
+
+  const response = await fetchWithRetry(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
 
   if (!response.ok) {
     throw new Error(`Gemini generation failed: ${String(response.status)} ${await response.text()}`);
@@ -190,7 +212,7 @@ ${sql}
 Bu SQL sorgusunun ne yaptığını bir cümle ile Türkçe açıkla. Kısa ve öz ol. Her JOIN veya alt sorguyu ayrı ayrı açıklama. Sonuç olarak ne hesaplandığına odaklan.`;
 
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
