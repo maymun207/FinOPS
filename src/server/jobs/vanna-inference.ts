@@ -146,7 +146,7 @@ async function generateSQL(
   apiKey: string,
 ): Promise<string> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -191,7 +191,7 @@ Bu SQL sorgusunun ne yaptığını bir cümle ile Türkçe açıkla. Kısa ve ö
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -340,7 +340,7 @@ SQL:`;
           payload.userId,
           payload.question,
           generatedSQL,
-          "gemini-2.0-flash",
+          "gemini-2.5-flash",
           null, // Gemini doesn't return token counts in REST API
           Date.now() - startTime,
         ],
