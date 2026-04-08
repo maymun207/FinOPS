@@ -43,7 +43,8 @@ cd /Users/tunckahveci/Desktop/FinOPS && npm run trigger:deploy 2>&1 | tail -6
 
 Wait for output: `Version XXXXXXXX.X deployed with 8 detected tasks`
 
-5. Start the Next.js dev server in a new terminal (Terminal 1):
+// turbo
+5. Start the Next.js dev server:
 
 ```bash
 cd /Users/tunckahveci/Desktop/FinOPS && npm run dev
@@ -51,7 +52,8 @@ cd /Users/tunckahveci/Desktop/FinOPS && npm run dev
 
 Wait until you see: `▲ Next.js` and `Local: http://localhost:3000`
 
-6. Start the Trigger.dev local worker in a second terminal (Terminal 2):
+// turbo
+6. Start the Trigger.dev local worker:
 
 ```bash
 cd /Users/tunckahveci/Desktop/FinOPS && npm run trigger:dev
