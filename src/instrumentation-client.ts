@@ -17,9 +17,6 @@ Sentry.init({
       maskAllInputs: true,
       blockAllMedia: true,
     }),
-    Sentry.feedbackIntegration({
-      colorScheme: "system",
-    }),
   ],
 
   // Capture Replay for 10 % of sessions, 100 % on error

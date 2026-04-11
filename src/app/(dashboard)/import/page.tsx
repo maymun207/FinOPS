@@ -16,6 +16,7 @@ import {
   type MappingRow,
 } from "@/components/import/ColumnMappingGrid";
 import { MappingProfileSelector } from "@/components/import/MappingProfileSelector";
+import { TemplateDownloadButtons } from "@/components/import/TemplateDownloadButtons";
 import { parseExcelFile, type ParseResult } from "@/lib/excel/parse";
 import { generateColumnFingerprint } from "@/lib/excel/fingerprint";
 import { trpc } from "@/lib/trpc/client";
@@ -177,6 +178,9 @@ export default function ImportPage() {
       {/* Step 1: Upload */}
       {step === "upload" && (
         <div>
+          {/* Template download card */}
+          <TemplateDownloadButtons />
+
           {/* Import type selector */}
           <div style={{ marginBottom: "24px" }}>
             <label

@@ -62,10 +62,10 @@ export const invoiceImportRowSchema = z.object({
     .transform((val) => {
       const lower = val.trim().toLowerCase();
       // Accept Turkish and English variants
-      if (["outbound", "satış", "satis", "satış faturası", "sales"].includes(lower)) {
+      if (["outbound", "çıkış", "cikis", "satış", "satis", "satış faturası", "sales"].includes(lower)) {
         return "outbound";
       }
-      if (["inbound", "alış", "alis", "alış faturası", "purchase"].includes(lower)) {
+      if (["inbound", "giriş", "giris", "alış", "alis", "alış faturası", "purchase"].includes(lower)) {
         return "inbound";
       }
       return val;

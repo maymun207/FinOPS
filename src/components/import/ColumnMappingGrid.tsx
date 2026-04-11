@@ -28,7 +28,7 @@ const INVOICE_FIELDS = [
   { value: "kdvTotal", label: "KDV Tutarı" },
   { value: "grandTotal", label: "Genel Toplam" },
   { value: "currency", label: "Para Birimi" },
-  { value: "description", label: "Açıklama" },
+  { value: "notes", label: "Açıklama" },
 ];
 
 const CONTACT_FIELDS = [
@@ -43,12 +43,12 @@ const CONTACT_FIELDS = [
 
 const JOURNAL_FIELDS = [
   { value: "", label: "— Eşleştirme Yok —" },
-  { value: "date", label: "Tarih" },
+  { value: "entryDate", label: "Tarih" },
   { value: "description", label: "Açıklama" },
   { value: "accountCode", label: "Hesap Kodu" },
-  { value: "debit", label: "Borç" },
-  { value: "credit", label: "Alacak" },
-  { value: "reference", label: "Referans" },
+  { value: "debitAmount", label: "Borç" },
+  { value: "creditAmount", label: "Alacak" },
+  { value: "lineDescription", label: "Satır Açıklaması" },
 ];
 
 const FIELD_MAP: Record<string, typeof INVOICE_FIELDS> = {
@@ -161,18 +161,27 @@ export function ColumnMappingGrid({
 
 /**
  * Simple auto-matcher: compares normalized source column name against target labels.
+ * Handles Turkish diacritics stripping (ö→o, ı→i, ş→s, ç→c, ğ→g, ü→u) for resilience.
  */
 function autoMatch(
   sourceCol: string,
   targets: { value: string; label: string }[]
 ): string {
-  const normalized = sourceCol.trim().toLowerCase().replace(/[_\s-]+/g, "");
+  const normalize = (s: string) =>
+    s.trim().toLowerCase()
+      .replace(/[_\s-]+/g, "")
+      // Normalize Turkish diacritics for resilient matching
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/ı/g, "i")
+      .replace(/İ/g, "i");
+
+  const normalized = normalize(sourceCol);
 
   for (const target of targets) {
     if (!target.value) continue;
 
-    const targetNorm = target.label.toLowerCase().replace(/[_\s-]+/g, "");
-    const targetValueNorm = target.value.toLowerCase();
+    const targetNorm = normalize(target.label);
+    const targetValueNorm = normalize(target.value);
 
     // Exact match on label or field name
     if (normalized === targetNorm || normalized === targetValueNorm) {

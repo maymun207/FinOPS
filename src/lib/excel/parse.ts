@@ -44,6 +44,7 @@ export function parseExcelBuffer(
     cellNF: false,       // Don't parse number formats
     cellText: false,     // Don't generate text representations
     raw: true,           // Return raw values (not formatted)
+    codepage: 65001,     // UTF-8 — essential for Turkish characters (ö, ı, ş, ç, ğ, ü)
   });
 
   let totalRows = 0;

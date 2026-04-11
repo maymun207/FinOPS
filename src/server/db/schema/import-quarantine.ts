@@ -28,6 +28,9 @@ export const importQuarantine = pgTable("import_quarantine", {
   /** Import source: csv | bank_api | e_fatura */
   source: varchar("source", { length: 50 }).notNull(),
 
+  /** Import type: invoice | contact | journal — determines target table on promotion */
+  importType: varchar("import_type", { length: 20 }),
+
   /** Original row data as JSON — preserved exactly as received */
   rawData: jsonb("raw_data").notNull(),
 

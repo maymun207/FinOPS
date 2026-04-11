@@ -80,6 +80,9 @@ const Icons = {
     audit: (
         <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 15l2 2 4-4" />
     ),
+    bug: (
+        <Icon d="M10 2L7 6h10l-3-4 M12 6v6 M5.5 10l-1.5 2 M18.5 10l1.5 2 M5 16l-1.5 2 M19 16l1.5 2 M7 12a5 5 0 0 0 10 0v-2H7v2z M7 16h10" />
+    ),
     chevronLeft: (
         <Icon d="M15 18l-6-6 6-6" size={16} />
     ),
@@ -132,6 +135,7 @@ const NAV_SECTIONS: NavSection[] = [
         title: "YÖNETİM",
         items: [
             { label: "Denetim Kayıtları", href: "/admin/audit", icon: Icons.audit },
+            { label: "Hata Bildir", href: "/report-bug", icon: Icons.bug },
         ],
     },
 ];

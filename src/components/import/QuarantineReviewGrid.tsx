@@ -24,6 +24,7 @@ import { trpc } from "@/lib/trpc/client";
 interface QuarantineRecord {
   id: string;
   source: string;
+  importType: string | null;
   rawData: Record<string, unknown>;
   status: string;
   errorMessage: string | null;
@@ -134,6 +135,39 @@ export function QuarantineReviewGrid({
             background:${style.bg};
             color:${style.color};
           ">${style.label}</span>`;
+        },
+      },
+      // Import type badge
+      {
+        headerName: "Tür",
+        field: "importType",
+        width: 100,
+        editable: false,
+        cellRenderer: (params: { value: string | null }) => {
+          const labels: Record<string, string> = {
+            invoice: "Fatura",
+            contact: "Cari",
+            journal: "Yevmiye",
+          };
+          const colors: Record<string, string> = {
+            invoice: "#6366f1",
+            contact: "#0ea5e9",
+            journal: "#22c55e",
+          };
+          const val = params.value ?? "";
+          const label = labels[val] ?? val;
+          const color = colors[val] ?? "#64748b";
+          return label
+            ? `<span style="
+                display:inline-block;
+                padding:2px 10px;
+                border-radius:9999px;
+                font-size:12px;
+                font-weight:600;
+                background:${color}20;
+                color:${color};
+              ">${label}</span>`
+            : "";
         },
       },
       // Dynamic rawData columns

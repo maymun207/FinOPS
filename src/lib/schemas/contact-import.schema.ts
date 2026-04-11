@@ -16,10 +16,13 @@ export const contactImportRowSchema = z.object({
   type: z
     .string()
     .transform((val) => {
-      const lower = val.trim().toLowerCase();
+      // Normalize Turkish İ/ı characters before lowercase comparison
+      const lower = val.trim().toLowerCase()
+        .replace(/i̇/g, "i")   // U+0069 U+0307 → plain i (from İ)
+        .normalize("NFC");
       if (["customer", "müşteri", "musteri"].includes(lower)) return "customer";
       if (["vendor", "tedarikçi", "tedarikci", "satıcı", "satici"].includes(lower)) return "vendor";
-      if (["both", "her ikisi", "müşteri/tedarikçi"].includes(lower)) return "both";
+      if (["both", "her ikisi", "ikisi de", "müşteri/tedarikçi"].includes(lower)) return "both";
       return val;
     })
     .pipe(
