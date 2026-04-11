@@ -54,8 +54,10 @@ function styleInfoHeaderRow(row: ExcelJS.Row) {
   row.height = 20;
 }
 
-function triggerDownload(buffer: ArrayBuffer | Buffer, filename: string) {
-  const blob = new Blob([buffer], {
+function triggerDownload(buffer: ArrayBuffer | Buffer<ArrayBufferLike>, filename: string) {
+  // Ensure we pass a plain ArrayBuffer to Blob — Buffer<ArrayBufferLike> is not directly assignable
+  const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  const blob = new Blob([arrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);

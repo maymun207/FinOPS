@@ -60,8 +60,8 @@ export const importRouter = createTRPCRouter({
           const result = schema.safeParse(row);
           if (!result.success) {
             errorMessage = result.error.issues
-              .map((i: { path: (string | number)[]; message: string }) =>
-                `${i.path.join(".")}: ${i.message}`
+              .map((i) =>
+                `${i.path.map(String).join(".")}: ${i.message}`
               )
               .join("; ");
           }

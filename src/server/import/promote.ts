@@ -134,7 +134,7 @@ export async function promoteInvoice(
     .values({
       companyId,
       contactId,
-      fiscalPeriodId: currentPeriod?.id ?? null,
+      fiscalPeriodId: currentPeriod?.id ?? undefined,
       invoiceNumber: parsed.invoiceNumber,
       invoiceDate: parsed.invoiceDate,
       dueDate: parsed.dueDate ?? null,
@@ -220,7 +220,7 @@ export async function promoteJournalEntry(
     .insert(journalEntries)
     .values({
       companyId,
-      fiscalPeriodId: currentPeriod?.id ?? null,
+      fiscalPeriodId: currentPeriod?.id ?? undefined,
       entryDate: header.entryDate,
       description: header.description,
       sourceType: "import",
