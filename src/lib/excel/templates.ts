@@ -55,9 +55,8 @@ function styleInfoHeaderRow(row: ExcelJS.Row) {
 }
 
 function triggerDownload(buffer: ArrayBuffer | Buffer<ArrayBufferLike>, filename: string) {
-  // Ensure we pass a plain ArrayBuffer to Blob — Buffer<ArrayBufferLike> is not directly assignable
-  const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-  const blob = new Blob([arrayBuffer], {
+  // Wrap in Uint8Array — always a valid BlobPart, works with both ArrayBuffer and SharedArrayBuffer
+  const blob = new Blob([new Uint8Array(buffer)], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);

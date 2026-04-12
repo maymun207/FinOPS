@@ -124,6 +124,12 @@ export async function promoteInvoice(
     .limit(1)
     .then((rows) => rows[0] ?? null);
 
+  if (!currentPeriod) {
+    throw new Error(
+      "Açık bir mali dönem bulunamadı. İçe aktarma için bir dönem açılmalıdır."
+    );
+  }
+
   // Create invoice header
   const subtotal = new Decimal(parsed.subtotal);
   const kdvTotal = new Decimal(parsed.kdvTotal);
@@ -134,7 +140,7 @@ export async function promoteInvoice(
     .values({
       companyId,
       contactId,
-      fiscalPeriodId: currentPeriod?.id ?? undefined,
+      fiscalPeriodId: currentPeriod.id,
       invoiceNumber: parsed.invoiceNumber,
       invoiceDate: parsed.invoiceDate,
       dueDate: parsed.dueDate ?? null,
@@ -215,12 +221,18 @@ export async function promoteJournalEntry(
     .limit(1)
     .then((r) => r[0] ?? null);
 
+  if (!currentPeriod) {
+    throw new Error(
+      "Açık bir mali dönem bulunamadı. Yevmiye kaydı için bir dönem açılmalıdır."
+    );
+  }
+
   // Create the journal entry header
   const [entry] = await db
     .insert(journalEntries)
     .values({
       companyId,
-      fiscalPeriodId: currentPeriod?.id ?? undefined,
+      fiscalPeriodId: currentPeriod.id,
       entryDate: header.entryDate,
       description: header.description,
       sourceType: "import",
