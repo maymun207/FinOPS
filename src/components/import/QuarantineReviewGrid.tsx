@@ -62,14 +62,30 @@ export function QuarantineReviewGrid({
 
   // Mutations
   const approveMutation = trpc.quarantine.approve.useMutation({
-    onSuccess: () => { void refetch(); },
+    onSuccess: (result) => {
+      if (result?.status === "rejected") {
+        alert(`Onay başarısız: ${result.errorMessage ?? "Bilinmeyen hata"}`);
+      }
+      void refetch();
+    },
+    onError: (err) => {
+      alert(`Sunucu hatası: ${err.message}`);
+      void refetch();
+    },
   });
   const rejectMutation = trpc.quarantine.reject.useMutation({
     onSuccess: () => { void refetch(); },
   });
   const bulkApproveMutation = trpc.quarantine.bulkApprove.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result.failed > 0) {
+        alert(`${String(result.failed)} kayıt onaylanamadı. Reddedilen kayıtlar sekmesini kontrol edin.`);
+      }
       setSelectedIds([]);
+      void refetch();
+    },
+    onError: (err) => {
+      alert(`Sunucu hatası: ${err.message}`);
       void refetch();
     },
   });

@@ -153,4 +153,37 @@ export const importRouter = createTRPCRouter({
 
       return match ?? null;
     }),
+
+  /**
+   * Queue a large file for server-side import processing.
+   * Called after the browser uploads the file to R2 via presigned URL.
+   * Triggers the excel-import-large Trigger.dev task.
+   */
+  queueLargeFile: companyProcedure
+    .input(
+      z.object({
+        r2Key: z.string().min(1),
+        importType: z.enum(["invoice", "contact", "journal"]),
+        mapping: z.array(
+          z.object({
+            sourceCol: z.string(),
+            targetField: z.string(),
+          })
+        ),
+        fileName: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { tasks } = await import("@trigger.dev/sdk/v3");
+
+      await tasks.trigger("excel-import-large", {
+        companyId: ctx.companyId,
+        userId: ctx.userId,
+        r2Key: input.r2Key,
+        importType: input.importType,
+        mapping: input.mapping,
+      });
+
+      return { queued: true, fileName: input.fileName };
+    }),
 });

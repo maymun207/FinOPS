@@ -90,8 +90,10 @@ export const excelImportLargeTask = task({
   run: async (payload: {
     r2Key: string;
     companyId: string;
+    userId?: string;
     mappingProfileId?: string;
     importType: ImportType;
+    mapping?: { sourceCol: string; targetField: string }[];
   }) => {
     logger.info("Starting large file import", { r2Key: payload.r2Key });
 
@@ -135,10 +137,10 @@ export const excelImportLargeTask = task({
         headers: sheet.headers,
       });
 
-      // 3. Load column mapping
-      let mapping: { sourceCol: string; targetField: string }[] = [];
+      // 3. Load column mapping — prefer payload mapping over profile
+      let mapping: { sourceCol: string; targetField: string }[] = payload.mapping ?? [];
 
-      if (payload.mappingProfileId) {
+      if (mapping.length === 0 && payload.mappingProfileId) {
         const { rows } = await pool.query(
           `SELECT mapping FROM column_mapping_profiles WHERE id = $1 LIMIT 1`,
           [payload.mappingProfileId]
@@ -165,6 +167,7 @@ export const excelImportLargeTask = task({
       const quarantineRecords: {
         companyId: string;
         source: string;
+        importType: string;
         rawData: Record<string, unknown>;
         status: string;
         errorMessage: string | null;
@@ -199,6 +202,7 @@ export const excelImportLargeTask = task({
         quarantineRecords.push({
           companyId: payload.companyId,
           source: "excel-large",
+          importType: payload.importType,
           rawData: parsed,
           status: "pending",
           errorMessage,
@@ -216,13 +220,14 @@ export const excelImportLargeTask = task({
         const placeholders: string[] = [];
 
         batch.forEach((rec, idx) => {
-          const offset = idx * 6;
+          const offset = idx * 7;
           placeholders.push(
-            `($${String(offset + 1)}, $${String(offset + 2)}, $${String(offset + 3)}::jsonb, $${String(offset + 4)}, $${String(offset + 5)}, $${String(offset + 6)})`
+            `($${String(offset + 1)}, $${String(offset + 2)}, $${String(offset + 3)}, $${String(offset + 4)}::jsonb, $${String(offset + 5)}, $${String(offset + 6)}, $${String(offset + 7)})`
           );
           values.push(
             rec.companyId,
             rec.source,
+            rec.importType,
             JSON.stringify(rec.rawData),
             rec.status,
             rec.errorMessage,
@@ -231,7 +236,7 @@ export const excelImportLargeTask = task({
         });
 
         await pool.query(
-          `INSERT INTO import_quarantine (company_id, source, raw_data, status, error_message, mapping_profile_id)
+          `INSERT INTO import_quarantine (company_id, source, import_type, raw_data, status, error_message, mapping_profile_id)
            VALUES ${placeholders.join(", ")}`,
           values
         );

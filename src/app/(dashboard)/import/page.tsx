@@ -41,9 +41,17 @@ export default function ImportPage() {
   const [mapping, setMapping] = useState<MappingRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sheetIndex, setSheetIndex] = useState(0);
+  // Large file R2 upload state
+  const [r2Key, setR2Key] = useState<string | null>(null);
+  const [isLargeFile, setIsLargeFile] = useState(false);
 
-  // tRPC mutation
+  // tRPC mutations
   const queueMutation = trpc.import.parseAndQueue.useMutation({
+    onSuccess: (_result) => {
+      router.push("/import/quarantine");
+    },
+  });
+  const queueLargeMutation = trpc.import.queueLargeFile.useMutation({
     onSuccess: (_result) => {
       router.push("/import/quarantine");
     },
@@ -53,8 +61,56 @@ export default function ImportPage() {
   const handleFileSelected = useCallback(
     async (file: File, isLarge: boolean) => {
       if (isLarge) {
-        // TODO: Upload to R2 via presigned URL for server-side processing
-        alert("Büyük dosya desteği yakında eklenecek. Lütfen 4MB altında dosya yükleyin.");
+        // Upload to R2 via presigned URL, then parse locally for mapping UI
+        setIsProcessing(true);
+        try {
+          // 1. Get presigned URL
+          const presignRes = await fetch("/api/import/presign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileSize: file.size,
+              contentType: file.type || "application/octet-stream",
+            }),
+          });
+          if (!presignRes.ok) {
+            const err = (await presignRes.json()) as { error?: string };
+            throw new Error(err.error ?? "Presigned URL alınamadı.");
+          }
+          const { url, key } = (await presignRes.json()) as { url: string; key: string };
+
+          // 2. Upload to R2
+          const uploadRes = await fetch(url, {
+            method: "PUT",
+            body: file,
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+          });
+          if (!uploadRes.ok) {
+            throw new Error("R2 yükleme başarısız.");
+          }
+
+          // 3. Store R2 key for later job trigger
+          setR2Key(key);
+          setIsLargeFile(true);
+
+          // 4. Parse locally for column mapping preview
+          const result = await parseExcelFile(file);
+          setParseResult(result);
+
+          const sheet = result.sheets[0];
+          if (sheet) {
+            const fp = await generateColumnFingerprint(sheet.headers);
+            setFingerprint(fp);
+          }
+
+          setStep("mapping");
+        } catch (err) {
+          console.error("Large file upload error:", err);
+          alert(err instanceof Error ? err.message : "Dosya yüklenemedi. Lütfen tekrar deneyin.");
+        } finally {
+          setIsProcessing(false);
+        }
         return;
       }
 
@@ -108,19 +164,33 @@ export default function ImportPage() {
       return;
     }
 
-    const mappedRows = sheet.rows.map((row) => {
-      const mapped: Record<string, unknown> = {};
-      for (const m of activeMappings) {
-        mapped[m.targetField] = row[m.sourceCol];
-      }
-      return mapped;
-    });
+    if (isLargeFile && r2Key) {
+      // Large file: trigger server-side job with R2 key + mapping
+      queueLargeMutation.mutate({
+        importType,
+        r2Key,
+        mapping: activeMappings.map((m) => ({
+          sourceCol: m.sourceCol,
+          targetField: m.targetField,
+        })),
+        fileName: sheet.name ?? "import",
+      });
+    } else {
+      // Small file: send mapped rows directly
+      const mappedRows = sheet.rows.map((row) => {
+        const mapped: Record<string, unknown> = {};
+        for (const m of activeMappings) {
+          mapped[m.targetField] = row[m.sourceCol];
+        }
+        return mapped;
+      });
 
-    queueMutation.mutate({
-      importType,
-      rows: mappedRows,
-    });
-  }, [parseResult, sheetIndex, mapping, importType, queueMutation]);
+      queueMutation.mutate({
+        importType,
+        rows: mappedRows,
+      });
+    }
+  }, [parseResult, sheetIndex, mapping, importType, isLargeFile, r2Key, queueMutation, queueLargeMutation]);
 
   const currentSheet = parseResult?.sheets[sheetIndex];
 
