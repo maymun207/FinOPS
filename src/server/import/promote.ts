@@ -145,7 +145,7 @@ export async function promoteInvoice(
       invoiceDate: parsed.invoiceDate,
       dueDate: parsed.dueDate ?? null,
       direction: parsed.direction,
-      currency: parsed.currency ?? "TRY",
+      currency: parsed.currency,
       subtotal: subtotal.toFixed(2),
       kdvTotal: kdvTotal.toFixed(2),
       grandTotal: grandTotal.toFixed(2),

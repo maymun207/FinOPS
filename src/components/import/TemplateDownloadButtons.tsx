@@ -59,7 +59,7 @@ const TEMPLATES: TemplateConfig[] = [
 
 export function TemplateDownloadButtons() {
   const [loading, setLoading] = useState<TemplateKey | null>(null);
-  const [downloaded, setDownloaded] = useState<Set<TemplateKey>>(new Set());
+  const [downloaded, setDownloaded] = useState(new Set<TemplateKey>());
 
   const handleDownload = async (tpl: TemplateConfig) => {
     if (loading) return;

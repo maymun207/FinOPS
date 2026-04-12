@@ -29,7 +29,7 @@ export default function ReportBugPage() {
 
   const canSubmit = title.trim() && category && severity && description.trim();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
@@ -158,7 +158,7 @@ export default function ReportBugPage() {
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); }}
             placeholder="Kısa bir açıklama yazın..."
             style={inputStyle}
             onFocus={(e) => { e.currentTarget.style.borderColor = "#38bdf8"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(56,189,248,0.1)"; }}
@@ -175,7 +175,7 @@ export default function ReportBugPage() {
             </label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => { setCategory(e.target.value); }}
               style={{ ...inputStyle, cursor: "pointer", appearance: "none" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "#38bdf8"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#1e293b"; }}
@@ -199,7 +199,7 @@ export default function ReportBugPage() {
                   <button
                     key={s.value}
                     type="button"
-                    onClick={() => setSeverity(s.value)}
+                    onClick={() => { setSeverity(s.value); }}
                     style={{
                       flex: 1,
                       padding: "0.5rem 0.25rem",
@@ -241,7 +241,7 @@ export default function ReportBugPage() {
           </label>
           <textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => { setDescription(e.target.value); }}
             placeholder="Hatayı detaylıca açıklayın..."
             rows={5}
             style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
@@ -257,7 +257,7 @@ export default function ReportBugPage() {
           </label>
           <textarea
             value={steps}
-            onChange={(e) => setSteps(e.target.value)}
+            onChange={(e) => { setSteps(e.target.value); }}
             placeholder={"1. ... sayfasına gidin\n2. ... butonuna tıklayın\n3. Hata oluşur"}
             rows={4}
             style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}

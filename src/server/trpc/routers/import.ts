@@ -9,8 +9,7 @@ import { invoiceImportRowSchema } from "@/lib/schemas/invoice-import.schema";
 import { contactImportRowSchema } from "@/lib/schemas/contact-import.schema";
 import { journalImportRowSchema } from "@/lib/schemas/journal-import.schema";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SCHEMA_MAP: Record<string, z.ZodTypeAny> = {
+const SCHEMA_MAP: Record<string, z.ZodType> = {
   invoice: invoiceImportRowSchema,
   contact: contactImportRowSchema,
   journal: journalImportRowSchema,

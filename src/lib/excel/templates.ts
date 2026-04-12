@@ -54,7 +54,7 @@ function styleInfoHeaderRow(row: ExcelJS.Row) {
   row.height = 20;
 }
 
-function triggerDownload(buffer: ArrayBuffer | Buffer<ArrayBufferLike>, filename: string) {
+function triggerDownload(buffer: ArrayBuffer | Buffer, filename: string) {
   // Wrap in Uint8Array — always a valid BlobPart, works with both ArrayBuffer and SharedArrayBuffer
   const blob = new Blob([new Uint8Array(buffer)], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -67,7 +67,7 @@ function triggerDownload(buffer: ArrayBuffer | Buffer<ArrayBufferLike>, filename
   a.click();
   document.body.removeChild(a);
   // Delay revoke to allow Firefox time to initiate download
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => { URL.revokeObjectURL(url); }, 1000);
 }
 
 // ── Invoice Template ─────────────────────────────────────────────────────────
