@@ -173,7 +173,7 @@ export default function ImportPage() {
           sourceCol: m.sourceCol,
           targetField: m.targetField,
         })),
-        fileName: sheet.name ?? "import",
+        fileName: sheet.name,
       });
     } else {
       // Small file: send mapped rows directly

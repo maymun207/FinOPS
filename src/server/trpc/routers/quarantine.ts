@@ -140,8 +140,8 @@ export const quarantineRouter = createTRPCRouter({
           // Each row is one side of a double-entry. We must find ALL
           // pending journal records with the same entryDate + description
           // and promote them as a single journal entry.
-          const entryDate = rawData["entryDate"] as string | undefined;
-          const description = rawData["description"] as string | undefined;
+          const entryDate = rawData.entryDate as string | undefined;
+          const description = rawData.description as string | undefined;
 
           if (!entryDate || !description) {
             throw new Error("Yevmiye kaydı için tarih ve açıklama zorunludur.");
@@ -162,7 +162,7 @@ export const quarantineRouter = createTRPCRouter({
           // Filter in JS for matching entryDate + description
           const groupedRows = allPendingJournals.filter((r) => {
             const rd = r.rawData as Record<string, unknown>;
-            return rd["entryDate"] === entryDate && rd["description"] === description;
+            return rd.entryDate === entryDate && rd.description === description;
           });
 
           // Promote the full group as one journal entry
@@ -298,8 +298,8 @@ export const quarantineRouter = createTRPCRouter({
 
           } else if (importType === "journal") {
             // ── JOURNAL GROUPING ──────────────────────────────────────
-            const entryDate = rawData["entryDate"] as string | undefined;
-            const description = rawData["description"] as string | undefined;
+            const entryDate = rawData.entryDate as string | undefined;
+            const description = rawData.description as string | undefined;
 
             if (!entryDate || !description) {
               throw new Error("Yevmiye kaydı için tarih ve açıklama zorunludur.");
@@ -328,7 +328,7 @@ export const quarantineRouter = createTRPCRouter({
 
             const groupedRows = allPendingJournals.filter((r) => {
               const rd = r.rawData as Record<string, unknown>;
-              return rd["entryDate"] === entryDate && rd["description"] === description;
+              return rd.entryDate === entryDate && rd.description === description;
             });
 
             // Promote the full group as one journal entry

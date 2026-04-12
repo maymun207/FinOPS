@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     },
   });
 
-  const key = `imports/${userId}/${Date.now()}-${body.fileName}`;
+  const key = `imports/${userId}/${String(Date.now())}-${body.fileName}`;
 
   try {
     const url = await getSignedUrl(
